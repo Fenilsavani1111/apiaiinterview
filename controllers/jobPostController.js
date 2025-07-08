@@ -288,13 +288,44 @@ exports.joinJobPostWithToken = async (req, res) => {
   try {
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
-    const job = await JobPost.findByPk(jobId);
+    // Fetch job with interview questions and answer points
+    const job = await JobPost.findByPk(jobId, {
+      include: [
+        {
+          model: InterviewQuestion,
+          as: 'interviewQuestions',
+          include: [
+            { model: InterviewAnswerPoint, as: 'suggestedAnswerPoints' }
+          ]
+        }
+      ]
+    });
     if (!job) {
       return res.status(404).json({ error: 'Job post not found' });
     }
     await job.increment('activeJoinUserCount', { by: 1 });
     await job.reload();
-    res.json({ message: 'User joined successfully', jobId, activeJoinUserCount: job.activeJoinUserCount });
+
+    // Transform questions for frontend
+    const questions = job.interviewQuestions?.map(q => ({
+      id: q.id,
+      question: q.question,
+      type: q.type,
+      difficulty: q.difficulty,
+      expectedDuration: q.duration,
+      category: q.category,
+      suggestedAnswers: q.suggestedAnswerPoints?.map(ap => ap.answerPoint) || [],
+      isRequired: true,
+      order: q.id
+    })) || [];
+
+    res.json({
+      message: 'User joined successfully',
+      jobId,
+      jobTitle: job.jobTitle,
+      activeJoinUserCount: job.activeJoinUserCount,
+      questions
+    });
   } catch (err) {
     res.status(400).json({ error: 'Invalid or expired token', details: err.message });
   }
