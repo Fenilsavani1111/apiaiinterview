@@ -22,7 +22,7 @@ exports.UploadResume = async (req, res) => {
     const b64 = Buffer.from(file.buffer).toString("base64");
     let dataURI = "data:" + file.mimetype + ";base64," + b64;
     const cldRes = await handleUpload(dataURI);
-    console.log("cldRes", cldRes);
+    console.log("file uploaded", cldRes);
     res.json({ success: true, file_url: cldRes.secure_url });
   } catch (error) {
     console.log(error);

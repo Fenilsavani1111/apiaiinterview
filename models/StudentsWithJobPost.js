@@ -1,14 +1,39 @@
 const { DataTypes } = require("sequelize");
 module.exports = (sequelize) => {
   const StudentsWithJobPost = sequelize.define("StudentsWithJobPost", {
-    name: { type: DataTypes.STRING, allowNull: true },
+    name: { type: DataTypes.STRING },
     email: { type: DataTypes.STRING, allowNull: false },
-    resumeUrl: { type: DataTypes.STRING, allowNull: true },
-    mobile: { type: DataTypes.BIGINT, allowNull: true },
-    experienceLevel: { type: DataTypes.STRING, allowNull: true },
-    designation: { type: DataTypes.STRING, allowNull: true },
-    location: { type: DataTypes.STRING, allowNull: true },
-    skills: { type: DataTypes.ARRAY(DataTypes.STRING), allowNull: true },
+    mobile: { type: DataTypes.BIGINT },
+    appliedDate: { type: DataTypes.STRING },
+    interviewDate: { type: DataTypes.STRING },
+    duration: { type: DataTypes.INTEGER },
+    status: {
+      type: DataTypes.ENUM("pending", "completed"),
+      allowNull: false,
+      defaultValue: "pending",
+    },
+    overallScore: { type: DataTypes.INTEGER },
+    scores: {
+      type: DataTypes.JSONB, // or DataTypes.JSON
+      allowNull: true,
+      defaultValue: {
+        communication: 0,
+        technical: 0,
+        problemSolving: 0,
+        leadership: 0,
+        bodyLanguage: 0,
+        confidence: 0,
+      },
+    },
+    experienceLevel: { type: DataTypes.STRING },
+    skills: { type: DataTypes.ARRAY(DataTypes.STRING) },
+    resumeUrl: { type: DataTypes.STRING },
+    linkedinUrl: { type: DataTypes.STRING },
+    recommendation: { type: DataTypes.STRING },
+    notes: { type: DataTypes.STRING },
+    hasRecording: { type: DataTypes.BOOLEAN },
+    designation: { type: DataTypes.STRING },
+    location: { type: DataTypes.STRING },
   });
   return StudentsWithJobPost;
 };

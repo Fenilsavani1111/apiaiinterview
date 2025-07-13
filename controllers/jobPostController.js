@@ -193,8 +193,14 @@ exports.getJobPostById = async (req, res) => {
     const post = await JobPost.findByPk(req.params.id, {
       include: fullInclude,
     });
+    const candidates = await StudentsWithJobPost.findAll({
+      where: { jobPostId: req.params.id },
+    });
     if (!post) return res.status(404).json({ error: "Job post not found" });
-    res.json(transformJobPostForFrontend(post));
+    res.json({
+      post: transformJobPostForFrontend(post),
+      candidate: candidates,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -355,6 +361,7 @@ exports.linkShareJobPost = async (req, res) => {
     await sendJobLinkEmail(email, token);
     res.json({ message: "Email sent successfully" });
   } catch (err) {
+    console.log("err", err);
     res
       .status(500)
       .json({ error: "Failed to send email", details: err.message });
@@ -401,12 +408,10 @@ exports.joinJobPostWithToken = async (req, res) => {
       where: { email: email, jobPostId: jobId },
     });
     if (!data)
-      return res
-        .status(404)
-        .json({
-          studentNotFound: true,
-          error: "Student not found please contact admin.",
-        });
+      return res.status(404).json({
+        studentNotFound: true,
+        error: "Student not found please contact admin.",
+      });
     // Map frontend field names to backend field names
     const studentData = {
       email,
