@@ -12,6 +12,10 @@ router.delete("/:id", jobPostController.deleteJobPost);
 
 router.post("/send-job-link", jobPostController.linkShareJobPost);
 router.post("/join-job-link", jobPostController.joinJobPostWithToken);
+router.post(
+  "/generate-job-token",
+  jobPostController.generateTokenForJobInterviewLink
+);
 
 const storage = new multer.memoryStorage();
 const upload = multer({

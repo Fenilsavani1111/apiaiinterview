@@ -3,7 +3,7 @@ module.exports = (sequelize) => {
   const StudentsWithJobPost = sequelize.define("StudentsWithJobPost", {
     name: { type: DataTypes.STRING },
     email: { type: DataTypes.STRING, allowNull: false },
-    mobile: { type: DataTypes.BIGINT },
+    mobile: { type: DataTypes.STRING },
     appliedDate: { type: DataTypes.STRING },
     interviewDate: { type: DataTypes.STRING },
     duration: { type: DataTypes.INTEGER },
