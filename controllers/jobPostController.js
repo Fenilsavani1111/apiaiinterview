@@ -407,11 +407,6 @@ exports.joinJobPostWithToken = async (req, res) => {
     const data = await StudentsWithJobPost.findOne({
       where: { email: email, jobPostId: jobId },
     });
-    if (!data)
-      return res.status(404).json({
-        studentNotFound: true,
-        error: "Student not found please contact admin.",
-      });
     // Map frontend field names to backend field names
     const studentData = {
       email,
@@ -423,13 +418,23 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills: skills?.length > 0 ? skills : [],
     };
-    await StudentsWithJobPost.update(
-      { ...studentData },
-      { where: { id: data?.id } },
-      { transaction: t }
-    );
-    await t.commit();
-    const updated = await StudentsWithJobPost.findByPk(data?.id);
+    if (data) {
+      await StudentsWithJobPost.update(
+        { ...studentData },
+        { where: { id: data?.id } },
+        { transaction: t }
+      );
+      await t.commit();
+      const updated = await StudentsWithJobPost.findByPk(data?.id);
+    } else {
+      const studentsWithJobPostdata = await StudentsWithJobPost.create(
+        { ...studentData, jobPostId: jobId },
+        {
+          transaction: t,
+        }
+      );
+      await t.commit();
+    }
     // Transform questions for frontend
     const questions =
       job.interviewQuestions?.map((q) => ({
@@ -453,8 +458,34 @@ exports.joinJobPostWithToken = async (req, res) => {
       questions,
     });
   } catch (err) {
+    console.log("err", err);
     res
       .status(400)
       .json({ error: "Invalid or expired token", details: err.message });
+  }
+};
+
+// generate token for job post interview link
+exports.generateTokenForJobInterviewLink = async (req, res) => {
+  const { jobId } = req.body;
+  const t = await sequelize.transaction();
+  if (!jobId) {
+    return res.status(400).json({ error: "jobId are required" });
+  }
+  try {
+    // Verify job exists
+    const job = await JobPost.findByPk(jobId);
+    if (!job) {
+      return res.status(404).json({ error: "Job post not found" });
+    }
+    // Generate token
+    const token = jwt.sign({ jobId }, SECRET, { expiresIn: "2d" });
+    res.json({ token, token, message: "Token generated successfully" });
+  } catch (err) {
+    console.log("err", err);
+    res.status(500).json({
+      error: "Failed to generate job interview link token",
+      details: err.message,
+    });
   }
 };
