@@ -8,9 +8,9 @@ module.exports = (sequelize) => {
     interviewDate: { type: DataTypes.STRING },
     duration: { type: DataTypes.INTEGER },
     status: {
-      type: DataTypes.ENUM("pending", "completed"),
+      type: DataTypes.ENUM("completed", "inprogress", "scheduled"),
       allowNull: false,
-      defaultValue: "pending",
+      defaultValue: "completed",
     },
     overallScore: { type: DataTypes.INTEGER },
     scores: {

@@ -16,6 +16,7 @@ router.post(
   "/generate-job-token",
   jobPostController.generateTokenForJobInterviewLink
 );
+router.post("/get-recent-candidates", jobPostController.getRecentCandidates);
 
 const storage = new multer.memoryStorage();
 const upload = multer({

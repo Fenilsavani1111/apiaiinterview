@@ -199,7 +199,7 @@ exports.getJobPostById = async (req, res) => {
     if (!post) return res.status(404).json({ error: "Job post not found" });
     res.json({
       post: transformJobPostForFrontend(post),
-      candidate: candidates,
+      candidates: candidates,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -344,19 +344,19 @@ exports.linkShareJobPost = async (req, res) => {
     // Generate token
     const token = jwt.sign({ jobId }, SECRET, { expiresIn: "2d" });
     // Add data to StudentsWithJobPost table
-    let records = email?.map((v) => {
-      return {
-        email: v,
-        jobPostId: job?.id,
-      };
-    });
-    const studentsWithJobPostdata = await StudentsWithJobPost.bulkCreate(
-      records,
-      {
-        transaction: t,
-      }
-    );
-    await t.commit();
+    // let records = email?.map((v) => {
+    //   return {
+    //     email: v,
+    //     jobPostId: job?.id,
+    //   };
+    // });
+    // const studentsWithJobPostdata = await StudentsWithJobPost.bulkCreate(
+    //   records,
+    //   {
+    //     transaction: t,
+    //   }
+    // );
+    // await t.commit();
     // Send email with token
     await sendJobLinkEmail(email, token);
     res.json({ message: "Email sent successfully" });
@@ -368,6 +368,7 @@ exports.linkShareJobPost = async (req, res) => {
   }
 };
 
+// join job post interview with token
 exports.joinJobPostWithToken = async (req, res) => {
   const { token } = req.body;
   if (!token) {
@@ -481,6 +482,25 @@ exports.generateTokenForJobInterviewLink = async (req, res) => {
     // Generate token
     const token = jwt.sign({ jobId }, SECRET, { expiresIn: "2d" });
     res.json({ token, token, message: "Token generated successfully" });
+  } catch (err) {
+    console.log("err", err);
+    res.status(500).json({
+      error: "Failed to generate job interview link token",
+      details: err.message,
+    });
+  }
+};
+
+// get recent candidates
+exports.getRecentCandidates = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const candidates = await StudentsWithJobPost.findAll({
+      order: [["createdAt", "DESC"]],
+      limit: 5,
+      include: [{ model: JobPost, as: "JobPost" }],
+    });
+    res.json({ candidates: candidates });
   } catch (err) {
     console.log("err", err);
     res.status(500).json({
