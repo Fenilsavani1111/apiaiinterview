@@ -419,6 +419,7 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills: skills?.length > 0 ? skills : [],
     };
+    let candidateId = "";
     if (data) {
       await StudentsWithJobPost.update(
         { ...studentData },
@@ -427,6 +428,7 @@ exports.joinJobPostWithToken = async (req, res) => {
       );
       await t.commit();
       const updated = await StudentsWithJobPost.findByPk(data?.id);
+      candidateId = updated?.id;
     } else {
       const studentsWithJobPostdata = await StudentsWithJobPost.create(
         { ...studentData, jobPostId: jobId },
@@ -435,6 +437,7 @@ exports.joinJobPostWithToken = async (req, res) => {
         }
       );
       await t.commit();
+      candidateId = studentsWithJobPostdata?.id;
     }
     // Transform questions for frontend
     const questions =
@@ -457,6 +460,7 @@ exports.joinJobPostWithToken = async (req, res) => {
       jobTitle: job.jobTitle,
       activeJoinUserCount: job.activeJoinUserCount,
       questions,
+      candidateId: candidateId,
     });
   } catch (err) {
     console.log("err", err);
@@ -507,5 +511,36 @@ exports.getRecentCandidates = async (req, res) => {
       error: "Failed to generate job interview link token",
       details: err.message,
     });
+  }
+};
+
+// update candidate interview details by id
+exports.updateStudentWithJobpostById = async (req, res) => {
+  try {
+    let { candidateId, data } = req?.body;
+    const t = await sequelize.transaction();
+    const candidate = await StudentsWithJobPost.findOne({
+      where: { id: candidateId },
+    });
+    if (!candidate) {
+      return res.status(404).json({ error: "Candidate not found" });
+    }
+    // Map frontend field names to backend field names
+    await StudentsWithJobPost.update(
+      { ...data },
+      { where: { id: candidateId } },
+      { transaction: t }
+    );
+    await t.commit();
+    const updated = await StudentsWithJobPost.findByPk(candidateId);
+    res.json({
+      message: "Candidate details updated successfully",
+      candidate: updated,
+    });
+  } catch (err) {
+    console.log("err", err);
+    res
+      .status(400)
+      .json({ error: "Invalid or expired token", details: err.message });
   }
 };
