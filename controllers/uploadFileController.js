@@ -15,6 +15,13 @@ async function handleUpload(file) {
   });
   return res;
 }
+async function handleInterviewUpload(file) {
+  const res = await cloudinary.uploader.upload(file, {
+    folder: "interview", // Cloudinary folder
+    resource_type: "video",
+  });
+  return res;
+}
 
 exports.UploadResume = async (req, res) => {
   try {
@@ -26,6 +33,23 @@ exports.UploadResume = async (req, res) => {
     res.json({ success: true, file_url: cldRes.secure_url });
   } catch (error) {
     console.log(error);
+    res.send({
+      message: error.message,
+    });
+  }
+};
+
+exports.UploadInterviewVideo = async (req, res) => {
+  try {
+    let file = req.file;
+    console.log("file", file);
+    const b64 = Buffer.from(file.buffer).toString("base64");
+    const dataURI = `data:${file.mimetype};base64,${b64}`;
+    const cldRes = await handleInterviewUpload(dataURI);
+    console.log("file uploaded", cldRes);
+    res.json({ success: true, file_url: cldRes.secure_url });
+  } catch (error) {
+    console.log("error", error);
     res.send({
       message: error.message,
     });

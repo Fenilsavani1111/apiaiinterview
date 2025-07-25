@@ -17,6 +17,10 @@ router.post(
   jobPostController.generateTokenForJobInterviewLink
 );
 router.post("/get-recent-candidates", jobPostController.getRecentCandidates);
+router.post(
+  "/update-candidate-byid",
+  jobPostController.updateStudentWithJobpostById
+);
 
 const storage = new multer.memoryStorage();
 const upload = multer({
@@ -27,5 +31,10 @@ router.post(
   "/upload-resume",
   upload.single("file"),
   uploadFileController.UploadResume
+);
+router.post(
+  "/upload-interview-video",
+  upload.single("video"),
+  uploadFileController.UploadInterviewVideo
 );
 module.exports = router;

@@ -29,6 +29,7 @@ module.exports = (sequelize) => {
     skills: { type: DataTypes.ARRAY(DataTypes.STRING) },
     resumeUrl: { type: DataTypes.STRING },
     linkedinUrl: { type: DataTypes.STRING },
+    interviewVideoLink: { type: DataTypes.STRING },
     recommendation: { type: DataTypes.STRING },
     notes: { type: DataTypes.STRING },
     hasRecording: { type: DataTypes.BOOLEAN },
