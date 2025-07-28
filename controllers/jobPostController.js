@@ -10,6 +10,15 @@ const {
 } = require("../models");
 const jwt = require("jsonwebtoken");
 const { sendJobLinkEmail } = require("../utils/mailService");
+const { Op } = require("sequelize");
+const {
+  startOfWeek,
+  subWeeks,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+} = require("date-fns");
 const SECRET = process.env.LINK_TOKEN_SECRET || "your-very-secret-key";
 
 // Helper to include all nested data
@@ -542,5 +551,127 @@ exports.updateStudentWithJobpostById = async (req, res) => {
     res
       .status(400)
       .json({ error: "Invalid or expired token", details: err.message });
+  }
+};
+
+// get recent candidates
+exports.getAdminDashbord = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const candidates = await StudentsWithJobPost.findAll({
+      order: [["createdAt", "DESC"]],
+      include: [{ model: JobPost, as: "JobPost" }],
+    });
+    const total_interview = await StudentsWithJobPost.count({
+      where: {
+        interviewDate: {
+          [Op.ne]: null,
+        },
+      },
+    });
+    // Get current week range (Mon–Sun)
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const currentWeekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
+    const curr_week_interview = await StudentsWithJobPost.count({
+      where: {
+        interviewDate: {
+          [Op.between]: [currentWeekStart, currentWeekEnd],
+        },
+      },
+    });
+    // Get previous week range
+    const previousWeekStart = startOfWeek(subWeeks(new Date(), 1), {
+      weekStartsOn: 1,
+    });
+    const previousWeekEnd = endOfWeek(subWeeks(new Date(), 1), {
+      weekStartsOn: 1,
+    });
+    const prev_week_interview = await StudentsWithJobPost.count({
+      where: {
+        interviewDate: {
+          [Op.between]: [previousWeekStart, previousWeekEnd],
+        },
+      },
+    });
+    // Calculate weekly interview growth percentage
+    let interview_weekly_growth = 0;
+    if (prev_week_interview === 0 && curr_week_interview === 0)
+      interview_weekly_growth = 0; // No change
+    else if (prev_week_interview === 0)
+      interview_weekly_growth = 100; // From 0 to something = 100% growth
+    else if (curr_week_interview === 0) interview_weekly_growth = 0;
+    else
+      interview_weekly_growth =
+        prev_week_interview === 0
+          ? 100
+          : ((curr_week_interview - prev_week_interview) /
+              prev_week_interview) *
+            100;
+    const jobs = await JobPost.findAll();
+    let active_jobs = jobs.filter((v) => v?.status === "draft")?.length;
+    let inactive_jobs = jobs.filter((v) => v?.status !== "draft")?.length;
+    const total_candidates = await StudentsWithJobPost.count({});
+    // This month's range
+    const currentMonthStart = startOfMonth(new Date());
+    const currentMonthEnd = endOfMonth(new Date());
+    const curr_month_total_candidates = await StudentsWithJobPost.count({
+      where: {
+        createdAt: {
+          [Op.between]: [currentMonthStart, currentMonthEnd],
+        },
+      },
+    });
+    // Last month's range
+    const lastMonthStart = startOfMonth(subMonths(new Date(), 1));
+    const lastMonthEnd = endOfMonth(subMonths(new Date(), 1));
+    const prev_month_total_candidates = await StudentsWithJobPost.count({
+      where: {
+        createdAt: {
+          [Op.between]: [lastMonthStart, lastMonthEnd],
+        },
+      },
+    });
+    // Calculate monthly candidate growth percentage
+    let candidate_monthly_growth = 0;
+    if (prev_month_total_candidates === 0 && curr_month_total_candidates === 0)
+      candidate_monthly_growth = 0; // No change
+    else if (prev_month_total_candidates === 0)
+      candidate_monthly_growth = 100; // From 0 to something = 100% growth
+    else if (curr_month_total_candidates === 0) candidate_monthly_growth = 0;
+    else
+      candidate_monthly_growth =
+        prev_month_total_candidates === 0
+          ? 100
+          : ((curr_month_total_candidates - prev_month_total_candidates) /
+              prev_month_total_candidates) *
+            100;
+    const recentCandidates = candidates
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // sort descending
+      .slice(0, 5);
+    const candidateScore = candidates.reduce(
+      (sum, item) => sum + item.overallScore,
+      0
+    );
+    res.json({
+      recentCandidates: recentCandidates,
+      candidates: candidates,
+      summary: {
+        total_interview: total_interview ?? 0,
+        interview_weekly_growth: interview_weekly_growth,
+        jobs: jobs,
+        active_jobs: active_jobs ?? 0,
+        inactive_jobs: inactive_jobs ?? 0,
+        total_candidates: total_candidates ?? 0,
+        candidate_monthly_growth: candidate_monthly_growth,
+        average_score:
+          candidateScore.length > 0 ? candidateScore / candidates.length : 0,
+      },
+    });
+  } catch (err) {
+    console.log("err", err);
+    res.status(500).json({
+      error: "Failed to generate job interview link token",
+      details: err.message,
+    });
   }
 };

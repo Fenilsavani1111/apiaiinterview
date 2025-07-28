@@ -17,6 +17,7 @@ router.post(
   jobPostController.generateTokenForJobInterviewLink
 );
 router.post("/get-recent-candidates", jobPostController.getRecentCandidates);
+router.post("/get-admin-dashboard", jobPostController.getAdminDashbord);
 router.post(
   "/update-candidate-byid",
   jobPostController.updateStudentWithJobpostById
