@@ -558,6 +558,22 @@ exports.updateStudentWithJobpostById = async (req, res) => {
   }
 };
 
+// GET candidate interview details by id
+exports.getCandidateById = async (req, res) => {
+  try {
+    const candidate = await StudentsWithJobPost.findByPk(req.params.id, {
+      include: [{ model: JobPost, as: "JobPost" }],
+    });
+    if (!candidate)
+      return res.status(404).json({ error: "Job post not found" });
+    res.json({
+      candidate: candidate,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // get admin dashboard
 exports.getAdminDashbord = async (req, res) => {
   const t = await sequelize.transaction();
