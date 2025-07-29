@@ -22,6 +22,10 @@ router.post(
   "/update-candidate-byid",
   jobPostController.updateStudentWithJobpostById
 );
+router.post(
+  "/get-analytics-dashboard",
+  jobPostController.getAnalyticsDashboard
+);
 
 const storage = new multer.memoryStorage();
 const upload = multer({
