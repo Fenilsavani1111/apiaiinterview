@@ -17,9 +17,15 @@ router.post(
   jobPostController.generateTokenForJobInterviewLink
 );
 router.post("/get-recent-candidates", jobPostController.getRecentCandidates);
+router.post("/get-admin-dashboard", jobPostController.getAdminDashbord);
 router.post(
   "/update-candidate-byid",
   jobPostController.updateStudentWithJobpostById
+);
+router.get("/get-candidate-byid/:id", jobPostController.getCandidateById);
+router.post(
+  "/get-analytics-dashboard",
+  jobPostController.getAnalyticsDashboard
 );
 
 const storage = new multer.memoryStorage();

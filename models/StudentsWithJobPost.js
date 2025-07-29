@@ -4,8 +4,12 @@ module.exports = (sequelize) => {
     name: { type: DataTypes.STRING },
     email: { type: DataTypes.STRING, allowNull: false },
     mobile: { type: DataTypes.STRING },
-    appliedDate: { type: DataTypes.STRING },
-    interviewDate: { type: DataTypes.STRING },
+    appliedDate: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
+    interviewDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
     duration: { type: DataTypes.INTEGER },
     status: {
       type: DataTypes.ENUM("completed", "inprogress", "scheduled"),
@@ -13,6 +17,7 @@ module.exports = (sequelize) => {
       defaultValue: "completed",
     },
     overallScore: { type: DataTypes.INTEGER },
+    totalScore: { type: DataTypes.INTEGER },
     scores: {
       type: DataTypes.JSONB, // or DataTypes.JSON
       allowNull: true,
