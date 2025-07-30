@@ -7,6 +7,7 @@ const {
   InterviewAnswerPoint,
   sequelize,
   StudentsWithJobPost,
+  StudentInterviewAnswer,
 } = require("../models");
 const jwt = require("jsonwebtoken");
 const { sendJobLinkEmail } = require("../utils/mailService");
@@ -433,25 +434,30 @@ exports.joinJobPostWithToken = async (req, res) => {
       skills: skills?.length > 0 ? skills : [],
     };
     let candidateId = "";
-    if (data) {
-      await StudentsWithJobPost.update(
-        { ...studentData },
-        { where: { id: data?.id } },
-        { transaction: t }
-      );
-      await t.commit();
-      const updated = await StudentsWithJobPost.findByPk(data?.id);
-      candidateId = updated?.id;
-    } else {
-      const studentsWithJobPostdata = await StudentsWithJobPost.create(
-        { ...studentData, jobPostId: jobId },
-        {
-          transaction: t,
-        }
-      );
-      await t.commit();
-      candidateId = studentsWithJobPostdata?.id;
-    }
+    // if (data) {
+    //   await StudentsWithJobPost.update(
+    //     { ...studentData },
+    //     { where: { id: data?.id } },
+    //     { transaction: t }
+    //   );
+    //   await t.commit();
+    //   const updated = await StudentsWithJobPost.findByPk(data?.id);
+    //   candidateId = updated?.id;
+    // } else {
+    const studentsWithJobPostdata = await StudentsWithJobPost.create(
+      {
+        ...studentData,
+        appliedDate: new Date(),
+        status: "inprogress",
+        jobPostId: jobId,
+      },
+      {
+        transaction: t,
+      }
+    );
+    await t.commit();
+    candidateId = studentsWithJobPostdata?.id;
+    // }
     // Transform questions for frontend
     const questions =
       job.interviewQuestions?.map((q) => ({
@@ -531,6 +537,8 @@ exports.getRecentCandidates = async (req, res) => {
 exports.updateStudentWithJobpostById = async (req, res) => {
   try {
     let { candidateId, data } = req?.body;
+    let questions = data?.questions ?? [];
+    delete data?.questions;
     const t = await sequelize.transaction();
     const candidate = await StudentsWithJobPost.findOne({
       where: { id: candidateId },
@@ -545,6 +553,11 @@ exports.updateStudentWithJobpostById = async (req, res) => {
       { transaction: t }
     );
     await t.commit();
+    await sequelize.transaction(async (t) => {
+      await StudentInterviewAnswer.bulkCreate([...questions], {
+        transaction: t,
+      });
+    });
     const updated = await StudentsWithJobPost.findByPk(candidateId);
     res.json({
       message: "Candidate details updated successfully",
