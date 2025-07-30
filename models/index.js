@@ -6,6 +6,7 @@ const JobSkill = require("./JobSkill")(sequelize);
 const InterviewQuestion = require("./InterviewQuestion")(sequelize);
 const InterviewAnswerPoint = require("./InterviewAnswerPoint")(sequelize);
 const StudentsWithJobPost = require("./StudentsWithJobPost")(sequelize);
+const StudentInterviewAnswer = require("./StudentInterviewAnswer")(sequelize);
 
 // Associations
 JobPost.hasMany(JobRequirement, {
@@ -50,6 +51,23 @@ JobPost.hasMany(StudentsWithJobPost, {
 });
 StudentsWithJobPost.belongsTo(JobPost, { foreignKey: "jobPostId" });
 
+StudentsWithJobPost.hasMany(StudentInterviewAnswer, {
+  as: "StudentInterviewAnswer",
+  foreignKey: "studentId",
+  onDelete: "CASCADE",
+});
+StudentInterviewAnswer.belongsTo(StudentsWithJobPost, {
+  foreignKey: "studentId",
+});
+InterviewQuestion.hasMany(StudentInterviewAnswer, {
+  as: "StudentInterviewAnswer",
+  foreignKey: "questionId",
+  onDelete: "CASCADE",
+});
+StudentInterviewAnswer.belongsTo(InterviewQuestion, {
+  foreignKey: "questionId",
+});
+
 module.exports = {
   sequelize,
   JobPost,
@@ -59,4 +77,5 @@ module.exports = {
   InterviewQuestion,
   InterviewAnswerPoint,
   StudentsWithJobPost,
+  StudentInterviewAnswer,
 };

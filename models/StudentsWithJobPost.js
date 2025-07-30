@@ -14,7 +14,7 @@ module.exports = (sequelize) => {
     status: {
       type: DataTypes.ENUM("completed", "inprogress", "scheduled"),
       allowNull: false,
-      defaultValue: "completed",
+      defaultValue: "inprogress",
     },
     overallScore: { type: DataTypes.INTEGER },
     totalScore: { type: DataTypes.INTEGER },
@@ -40,6 +40,11 @@ module.exports = (sequelize) => {
     hasRecording: { type: DataTypes.BOOLEAN },
     designation: { type: DataTypes.STRING },
     location: { type: DataTypes.STRING },
+    attemptedQuestions: { type: DataTypes.INTEGER, defaultValue: 0 },
+    // averageScore: { type: DataTypes.INTEGER, defaultValue: 0 },
+    grade: { type: DataTypes.STRING },
+    // totalTime: { type: DataTypes.INTEGER, defaultValue: 0 },
+    averageResponseTime: { type: DataTypes.INTEGER, defaultValue: 0 },
   });
   return StudentsWithJobPost;
 };
