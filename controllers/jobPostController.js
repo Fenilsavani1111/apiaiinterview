@@ -407,7 +407,7 @@ exports.joinJobPostWithToken = async (req, res) => {
     if (!job) {
       return res.status(404).json({ error: "Job post not found" });
     }
-    await job.increment("activeJoinUserCount", { by: 1 });
+    await job.increment("applicants", { by: 1 });
     await job.reload();
     const {
       email,
@@ -419,9 +419,9 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills,
     } = req.body;
-    const data = await StudentsWithJobPost.findOne({
-      where: { email: email, jobPostId: jobId },
-    });
+    // const data = await StudentsWithJobPost.findOne({
+    //   where: { email: email, jobPostId: jobId },
+    // });
     // Map frontend field names to backend field names
     const studentData = {
       email,
@@ -553,6 +553,12 @@ exports.updateStudentWithJobpostById = async (req, res) => {
       { transaction: t }
     );
     await t.commit();
+    await JobPost.increment("interviews", {
+      by: 1,
+      where: { id: candidate?.jobPostId },
+      transaction: t,
+    });
+    await t.commit();
     await sequelize.transaction(async (t) => {
       await StudentInterviewAnswer.bulkCreate([...questions], {
         transaction: t,
@@ -575,7 +581,19 @@ exports.updateStudentWithJobpostById = async (req, res) => {
 exports.getCandidateById = async (req, res) => {
   try {
     const candidate = await StudentsWithJobPost.findByPk(req.params.id, {
-      include: [{ model: JobPost, as: "JobPost" }],
+      include: [
+        { model: JobPost, as: "JobPost" },
+        {
+          model: StudentInterviewAnswer,
+          as: "StudentInterviewAnswer",
+          include: [
+            {
+              model: InterviewQuestion,
+              as: "Question", // 👈 Match the alias used in the association
+            },
+          ],
+        },
+      ],
     });
     if (!candidate)
       return res.status(404).json({ error: "Job post not found" });
@@ -608,6 +626,7 @@ exports.getAdminDashbord = async (req, res) => {
     const curr_week_interview = await StudentsWithJobPost.count({
       where: {
         interviewDate: {
+          [Op.ne]: null,
           [Op.between]: [currentWeekStart, currentWeekEnd],
         },
       },
@@ -622,6 +641,7 @@ exports.getAdminDashbord = async (req, res) => {
     const prev_week_interview = await StudentsWithJobPost.count({
       where: {
         interviewDate: {
+          [Op.ne]: null,
           [Op.between]: [previousWeekStart, previousWeekEnd],
         },
       },
@@ -769,7 +789,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
       (sum, item) => sum + item.duration,
       0
     );
-    const duration_growth = curr_month_avg_duration - prev_month_avg_duration;
+    let duration_growth = curr_month_avg_duration - prev_month_avg_duration;
     if (duration_growth < 0) duration_growth = 0;
     // const duration_growth = getPercentage(
     //   prev_month_avg_duration,
@@ -868,10 +888,6 @@ exports.getAnalyticsDashboard = async (req, res) => {
       raw: true,
     });
 
-    const thisMonth = getMonth(new Date());
-    const thisYear = getYear(new Date());
-    const prevMonth = getMonth(subMonths(new Date(), 1));
-    const prevYear = getYear(subMonths(new Date(), 1));
     // Skills
     const skillKeys = [
       "communication",
@@ -887,14 +903,15 @@ exports.getAnalyticsDashboard = async (req, res) => {
       skillTrends[skill] = { current_month: [], previous_month: [] };
     });
     // Group by month
+    const now = new Date(); // Current date
+    const prevDate = subMonths(now, 1); // Date one month ago
+    const currentMonthKey = format(now, "yyyy-MM");
+    const previousMonthKey = format(prevDate, "yyyy-MM");
     scores.forEach((record) => {
       if (!record.interviewDate) return;
-      const date = new Date(record.interviewDate);
-      const month = getMonth(date);
-      const year = getYear(date);
-
-      const isCurrent = month === thisMonth && year === thisYear;
-      const isPrevious = month === prevMonth && year === prevYear;
+      const dateKey = format(new Date(record.interviewDate), "yyyy-MM");
+      const isCurrent = dateKey === currentMonthKey;
+      const isPrevious = dateKey === previousMonthKey;
 
       skillKeys.forEach((key) => {
         const value = record[key];

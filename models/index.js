@@ -59,6 +59,18 @@ StudentsWithJobPost.hasMany(StudentInterviewAnswer, {
 StudentInterviewAnswer.belongsTo(StudentsWithJobPost, {
   foreignKey: "studentId",
 });
+
+// Question -> Answers
+InterviewQuestion.hasMany(StudentInterviewAnswer, {
+  as: "QuestionAnswers",
+  foreignKey: "questionId",
+  onDelete: "CASCADE",
+});
+StudentInterviewAnswer.belongsTo(InterviewQuestion, {
+  as: "Question",
+  foreignKey: "questionId",
+});
+
 InterviewQuestion.hasMany(StudentInterviewAnswer, {
   as: "StudentInterviewAnswer",
   foreignKey: "questionId",
