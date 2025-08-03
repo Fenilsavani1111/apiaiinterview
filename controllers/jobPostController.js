@@ -546,18 +546,25 @@ exports.updateStudentWithJobpostById = async (req, res) => {
     if (!candidate) {
       return res.status(404).json({ error: "Candidate not found" });
     }
+    let deletdques = await StudentInterviewAnswer.destroy({
+      where: {
+        studentId: candidateId,
+      },
+      transaction: t,
+    });
     // Map frontend field names to backend field names
     await StudentsWithJobPost.update(
       { ...data },
       { where: { id: candidateId } },
       { transaction: t }
     );
-    await t.commit();
-    await JobPost.increment("interviews", {
-      by: 1,
-      where: { id: candidate?.jobPostId },
-      transaction: t,
-    });
+    if (deletdques === 0) {
+      await JobPost.increment("interviews", {
+        by: 1,
+        where: { id: candidate?.jobPostId },
+        transaction: t,
+      });
+    }
     await t.commit();
     await sequelize.transaction(async (t) => {
       await StudentInterviewAnswer.bulkCreate([...questions], {
