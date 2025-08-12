@@ -103,6 +103,8 @@ exports.createJobPost = async (req, res) => {
       experience,
       description,
       salary,
+      status,
+      createdBy,
       requirements = [],
       responsibilities = [],
       skills = [],
@@ -121,6 +123,9 @@ exports.createJobPost = async (req, res) => {
       salaryMin: salary?.min,
       salaryMax: salary?.max,
       salaryCurrency: salary?.currency,
+      status: status,
+      createdBy: createdBy,
+      // shareableUrl
     };
 
     const jobPost = await JobPost.create(jobPostData, { transaction: t });
