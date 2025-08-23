@@ -45,6 +45,12 @@ module.exports = (sequelize) => {
     grade: { type: DataTypes.STRING },
     // totalTime: { type: DataTypes.INTEGER, defaultValue: 0 },
     averageResponseTime: { type: DataTypes.INTEGER, defaultValue: 0 },
+    aiEvaluationSummary: { type: DataTypes.JSON },
+    performanceBreakdown: { type: DataTypes.JSON },
+    quickStats: { type: DataTypes.JSON },
+    recommendations: { type: DataTypes.JSON },
+    behavioralAnalysis: { type: DataTypes.JSON },
+    videoAnalysisInsights: { type: DataTypes.JSON },
   });
   return StudentsWithJobPost;
 };
