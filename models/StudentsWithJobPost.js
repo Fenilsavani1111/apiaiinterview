@@ -35,7 +35,6 @@ module.exports = (sequelize) => {
     resumeUrl: { type: DataTypes.STRING },
     linkedinUrl: { type: DataTypes.STRING },
     interviewVideoLink: { type: DataTypes.STRING },
-    recommendation: { type: DataTypes.STRING },
     notes: { type: DataTypes.STRING },
     hasRecording: { type: DataTypes.BOOLEAN },
     designation: { type: DataTypes.STRING },
@@ -49,8 +48,8 @@ module.exports = (sequelize) => {
     performanceBreakdown: { type: DataTypes.JSON },
     quickStats: { type: DataTypes.JSON },
     recommendations: { type: DataTypes.JSON },
-    behavioralAnalysis: { type: DataTypes.JSON },
-    videoAnalysisInsights: { type: DataTypes.JSON },
+    behavioral_analysis: { type: DataTypes.JSON },
+    video_analysis_insights: { type: DataTypes.JSON },
   });
   return StudentsWithJobPost;
 };
