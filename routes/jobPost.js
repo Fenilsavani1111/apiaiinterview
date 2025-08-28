@@ -11,6 +11,7 @@ router.put("/:id", jobPostController.updateJobPost);
 router.delete("/:id", jobPostController.deleteJobPost);
 
 router.post("/send-job-link", jobPostController.linkShareJobPost);
+router.post("/get-jobpost-by-token", jobPostController.getJobpostbyToken);
 router.post("/join-job-link", jobPostController.joinJobPostWithToken);
 router.post(
   "/generate-job-token",

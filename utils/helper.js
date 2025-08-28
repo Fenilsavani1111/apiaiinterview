@@ -5,5 +5,6 @@ exports.getPercentage = (prev_count, curr_count) => {
   else
     growth =
       prev_count === 0 ? 100 : ((curr_count - prev_count) / prev_count) * 100;
-  return growth ?? 0;
+  growth = growth ? growth?.toFixed(2) : 0;
+  return +growth;
 };

@@ -103,6 +103,8 @@ exports.createJobPost = async (req, res) => {
       experience,
       description,
       salary,
+      status,
+      createdBy,
       requirements = [],
       responsibilities = [],
       skills = [],
@@ -121,6 +123,9 @@ exports.createJobPost = async (req, res) => {
       salaryMin: salary?.min,
       salaryMax: salary?.max,
       salaryCurrency: salary?.currency,
+      status: status,
+      createdBy: createdBy,
+      // shareableUrl
     };
 
     const jobPost = await JobPost.create(jobPostData, { transaction: t });
@@ -357,20 +362,7 @@ exports.linkShareJobPost = async (req, res) => {
     }
     // Generate token
     const token = jwt.sign({ jobId }, SECRET, { expiresIn: "2d" });
-    // Add data to StudentsWithJobPost table
-    // let records = email?.map((v) => {
-    //   return {
-    //     email: v,
-    //     jobPostId: job?.id,
-    //   };
-    // });
-    // const studentsWithJobPostdata = await StudentsWithJobPost.bulkCreate(
-    //   records,
-    //   {
-    //     transaction: t,
-    //   }
-    // );
-    // await t.commit();
+
     // Send email with token
     await sendJobLinkEmail(email, token);
     res.json({ message: "Email sent successfully" });
@@ -379,6 +371,36 @@ exports.linkShareJobPost = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to send email", details: err.message });
+  }
+};
+
+// get job post with token
+exports.getJobpostbyToken = async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ error: "token is required" });
+  }
+  try {
+    const t = await sequelize.transaction();
+    const decoded = jwt.verify(token, SECRET);
+    const jobId = decoded.jobId;
+
+    const job = await JobPost.findByPk(jobId, {
+      include: fullInclude,
+    });
+    if (!job) {
+      return res.status(404).json({ error: "Job post not found" });
+    }
+    await t.commit();
+    res.json({
+      message: "Job post found",
+      job: job,
+    });
+  } catch (err) {
+    console.log("err", err);
+    res
+      .status(400)
+      .json({ error: "Invalid or expired token", details: err.message });
   }
 };
 
@@ -419,10 +441,6 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills,
     } = req.body;
-    // const data = await StudentsWithJobPost.findOne({
-    //   where: { email: email, jobPostId: jobId },
-    // });
-    // Map frontend field names to backend field names
     const studentData = {
       email,
       name,
@@ -434,16 +452,6 @@ exports.joinJobPostWithToken = async (req, res) => {
       skills: skills?.length > 0 ? skills : [],
     };
     let candidateId = "";
-    // if (data) {
-    //   await StudentsWithJobPost.update(
-    //     { ...studentData },
-    //     { where: { id: data?.id } },
-    //     { transaction: t }
-    //   );
-    //   await t.commit();
-    //   const updated = await StudentsWithJobPost.findByPk(data?.id);
-    //   candidateId = updated?.id;
-    // } else {
     const studentsWithJobPostdata = await StudentsWithJobPost.create(
       {
         ...studentData,
@@ -457,7 +465,6 @@ exports.joinJobPostWithToken = async (req, res) => {
     );
     await t.commit();
     candidateId = studentsWithJobPostdata?.id;
-    // }
     // Transform questions for frontend
     const questions =
       job.interviewQuestions?.map((q) => ({
