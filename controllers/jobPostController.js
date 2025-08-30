@@ -200,7 +200,11 @@ exports.createJobPost = async (req, res) => {
 exports.getAllJobPosts = async (req, res) => {
   try {
     const posts = await JobPost.findAll({ include: fullInclude });
-    res.json(posts.map(transformJobPostForFrontend));
+    let damiposts = posts.map(transformJobPostForFrontend);
+    damiposts = damiposts.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    res.json(damiposts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
