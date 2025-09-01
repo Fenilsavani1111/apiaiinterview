@@ -5,6 +5,7 @@ module.exports = (sequelize) => {
     aiEvaluation: { type: DataTypes.TEXT },
     score: { type: DataTypes.INTEGER },
     responseTime: { type: DataTypes.INTEGER },
+    endTime: { type: DataTypes.INTEGER },
   });
   return StudentInterviewAnswer;
 };
