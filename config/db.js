@@ -12,10 +12,10 @@ const sequelize = new Sequelize(
     dialect: "postgres",
     logging: false,
     pool: {
-      max: 20,
+      max: 20, // limit per app instance
       min: 0,
-      acquire: 60000,
-      idle: 10000,
+      acquire: 60000, // wait 60s before timeout
+      idle: 10000, // release idle conn after 10s
     },
   }
 );
