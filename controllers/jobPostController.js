@@ -435,8 +435,6 @@ exports.joinJobPostWithToken = async (req, res) => {
     if (!job) {
       return res.status(404).json({ error: "Job post not found" });
     }
-    await job.increment("applicants", { by: 1 });
-    await job.reload();
     const {
       email,
       name,
@@ -447,6 +445,15 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills,
     } = req.body;
+    let findCandidate = await StudentsWithJobPost.findOne({
+      where: { email: email, jobPostId: jobId },
+    });
+    if (!findCandidate) {
+      return res.status(404).json({ error: "Candidate already exists." });
+    }
+
+    await job.increment("applicants", { by: 1 });
+    await job.reload();
     const studentData = {
       email,
       name,

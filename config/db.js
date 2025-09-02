@@ -17,6 +17,9 @@ const sequelize = new Sequelize(
       acquire: 60000, // wait 60s before timeout
       idle: 10000, // release idle conn after 10s
     },
+    dialectOptions: {
+      connectTimeout: 60000, // optional for MySQL
+    },
   }
 );
 
