@@ -371,6 +371,7 @@ exports.linkShareJobPost = async (req, res) => {
     await sendJobLinkEmail(email, token);
     res.json({ message: "Email sent successfully" });
   } catch (err) {
+    await t.rollback();
     console.log("err", err);
     res
       .status(500)
@@ -384,8 +385,8 @@ exports.getJobpostbyToken = async (req, res) => {
   if (!token) {
     return res.status(400).json({ error: "token is required" });
   }
+  const t = await sequelize.transaction();
   try {
-    const t = await sequelize.transaction();
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
 
@@ -401,6 +402,7 @@ exports.getJobpostbyToken = async (req, res) => {
       job: job,
     });
   } catch (err) {
+    await t.rollback();
     console.log("err", err);
     res
       .status(400)
@@ -414,8 +416,8 @@ exports.joinJobPostWithToken = async (req, res) => {
   if (!token) {
     return res.status(400).json({ error: "token is required" });
   }
+  const t = await sequelize.transaction();
   try {
-    const t = await sequelize.transaction();
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
     // Fetch job with interview questions and answer points
@@ -493,6 +495,7 @@ exports.joinJobPostWithToken = async (req, res) => {
       candidateId: candidateId,
     });
   } catch (err) {
+    await t.rollback();
     console.log("err", err);
     res
       .status(400)
@@ -503,7 +506,6 @@ exports.joinJobPostWithToken = async (req, res) => {
 // generate token for job post interview link
 exports.generateTokenForJobInterviewLink = async (req, res) => {
   const { jobId } = req.body;
-  const t = await sequelize.transaction();
   if (!jobId) {
     return res.status(400).json({ error: "jobId are required" });
   }
@@ -537,6 +539,7 @@ exports.getRecentCandidates = async (req, res) => {
     res.json({ candidates: candidates });
   } catch (err) {
     console.log("err", err);
+    await t.rollback();
     res.status(500).json({
       error: "Failed to generate job interview link token",
       details: err.message,
@@ -546,11 +549,11 @@ exports.getRecentCandidates = async (req, res) => {
 
 // update candidate interview details by id
 exports.updateStudentWithJobpostById = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     let { candidateId, data } = req?.body;
     let questions = data?.questions ?? [];
     delete data?.questions;
-    const t = await sequelize.transaction();
     const candidate = await StudentsWithJobPost.findOne({
       where: { id: candidateId },
     });
@@ -588,6 +591,7 @@ exports.updateStudentWithJobpostById = async (req, res) => {
       candidate: updated,
     });
   } catch (err) {
+    await t.rollback();
     console.log("err", err);
     res
       .status(400)
@@ -625,7 +629,6 @@ exports.getCandidateById = async (req, res) => {
 
 // get admin dashboard
 exports.getAdminDashbord = async (req, res) => {
-  const t = await sequelize.transaction();
   try {
     const candidates = await StudentsWithJobPost.findAll({
       order: [["createdAt", "DESC"]],
