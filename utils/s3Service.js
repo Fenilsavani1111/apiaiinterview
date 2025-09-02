@@ -1,7 +1,6 @@
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { S3Client } = require("@aws-sdk/client-s3");
+const { Upload } = require("@aws-sdk/lib-storage");
 
-// Configure AWS S3 client using environment variables
 const s3Client2 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -23,23 +22,24 @@ const uploadFile = async ({
     if (!Body && !Key)
       throw new Error("Missing file content or file name/key for S3 upload");
 
-    // Prepare S3 PutObjectCommand parameters
-    const cmd = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key,
-      Body: Body,
-      ContentType: contentType, // include only if you'll send the header on upload
+    const upload = new Upload({
+      client: s3Client2,
+      params: {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key,
+        Body,
+        ContentType: contentType,
+      },
+      queueSize: 5, // how many parts upload in parallel
+      partSize: 10 * 1024 * 1024, // 10 MB chunks
     });
 
-    // Send the command to S3
-    const data = await s3Client2.send(cmd);
+    upload.on("httpUploadProgress", (progress) => {
+      console.log("Progress:", progress);
+    });
 
-    // Check if upload was successful
-    if (data.$metadata.httpStatusCode !== 200) {
-      return;
-    }
+    await upload.done();
 
-    // Construct public URL of the uploaded file
     let url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
     return { url, key: Key };
   } catch (error) {
