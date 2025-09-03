@@ -448,7 +448,7 @@ exports.joinJobPostWithToken = async (req, res) => {
     let findCandidate = await StudentsWithJobPost.findOne({
       where: { email: email, jobPostId: jobId },
     });
-    if (!findCandidate) {
+    if (findCandidate) {
       return res.status(404).json({ error: "Candidate already exists." });
     }
 
