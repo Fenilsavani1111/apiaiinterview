@@ -12,19 +12,23 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@affinda/affinda": "^7.6.1",
     "@aws-sdk/client-s3": "^3.876.0",
     "@aws-sdk/lib-storage": "^3.879.0",
+    "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-handlebars": "^8.0.3",
+    "form-data": "^4.0.4",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.4",
     "nodemailer-express-handlebars": "^6.0.0",
     "nodemon": "^3.1.10",
+    "path": "^0.12.7",
     "pg": "^8.16.2",
     "sequelize": "^6.37.7"
   }

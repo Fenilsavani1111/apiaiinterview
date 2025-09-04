@@ -2,7 +2,37 @@ const express = require("express");
 const router = express.Router();
 const jobPostController = require("../controllers/jobPostController");
 const uploadFileController = require("../controllers/uploadFileController");
+const resumeParserController = require("../controllers/resumeParserController");
 const multer = require("multer");
+const path = require("path");
+
+// Configure storage for videos
+const storagevideo = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "../uploads")); // uploads folder
+  },
+  filename: (req, file, cb) => {
+    let filename = req.body?.fileName;
+    cb(null, filename);
+  },
+});
+
+const uploadvideo = multer({ storage: storagevideo });
+
+// Route to upload video
+router.post(
+  "/upload-interview-video",
+  uploadvideo.single("video"),
+  (req, res) => {
+    console.log(req.file, "file Name:", req.body.fileName);
+    if (!req.file) return res.status(400).send("No file uploaded.");
+    res.send({
+      message: "Video uploaded successfully",
+      fileName: req.body.fileName,
+      path: `uploads/${req.body.fileName}`, // can use for video src
+    });
+  }
+);
 
 router.post("/", jobPostController.createJobPost);
 router.get("/", jobPostController.getAllJobPosts);
@@ -39,9 +69,16 @@ router.post(
   upload.single("file"),
   uploadFileController.UploadResume
 );
+
 router.post(
-  "/upload-interview-video",
-  upload.single("video"),
-  uploadFileController.UploadInterviewVideo
+  "/resume-parser",
+  upload.single("file"),
+  resumeParserController.getResumeParser
 );
+
+// router.post(
+//   "/upload-interview-video",
+//   upload.single("video"),
+//   uploadFileController.UploadInterviewVideo
+// );
 module.exports = router;
