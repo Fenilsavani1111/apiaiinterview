@@ -5,10 +5,13 @@ const sequelize = require("./config/db");
 require("./models/User");
 const jobPostRoutes = require("./routes/jobPost");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api", userRoutes);
 app.use("/api/jobposts", jobPostRoutes);
 

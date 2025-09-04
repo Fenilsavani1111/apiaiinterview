@@ -19,8 +19,8 @@ const uploadFile = async ({
   try {
     const Body = fileContent || buffer;
     const Key = fileName || key;
-    if (!Body && !Key)
-      throw new Error("Missing file content or file name/key for S3 upload");
+    if (!Body) throw new Error("Missing file content for S3 upload");
+    if (!Key) throw new Error("Missing file name/key for S3 upload");
 
     const upload = new Upload({
       client: s3Client2,
@@ -35,12 +35,15 @@ const uploadFile = async ({
     });
 
     upload.on("httpUploadProgress", (progress) => {
-      console.log("Progress:", progress);
+      console.log(
+        `Progress: ${((progress.loaded / progress.total) * 100).toFixed(2)}%`
+      );
     });
 
-    await upload.done();
+    const data = await upload.done(); // wait for completion
+    console.log("Upload complete:", data);
 
-    let url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
+    const url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
     return { url, key: Key };
   } catch (error) {
     console.error("aws error->>", error);
