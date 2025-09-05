@@ -181,7 +181,7 @@ Skills:
     };
 
     // 9. Remove resumes with very low score
-    if (selectedMatch?.overallScore < 0.4) {
+    if (selectedMatch?.overallScore < 0.1) {
       await client.deleteDocument(processedDocument.meta.identifier);
     }
 
