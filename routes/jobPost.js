@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const jobPostController = require("../controllers/jobPostController");
 const uploadFileController = require("../controllers/uploadFileController");
-const resumeParserController = require("../controllers/resumeParserController");
+// const resumeParserController = require("../controllers/resumeParserController");
 const multer = require("multer");
 const path = require("path");
 
@@ -87,11 +87,11 @@ router.post(
   uploadFileController.UploadResume
 );
 
-router.post(
-  "/resume-parser",
-  upload.single("file"),
-  resumeParserController.getResumeParser
-);
+// router.post(
+//   "/resume-parser",
+//   upload.single("file"),
+//   resumeParserController.getResumeParser
+// );
 
 // router.post(
 //   "/upload-interview-video",
