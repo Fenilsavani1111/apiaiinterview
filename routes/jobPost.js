@@ -12,9 +12,8 @@ const storagevideo = multer.diskStorage({
     cb(null, path.join(__dirname, "../uploads")); // uploads folder
   },
   filename: (req, file, cb) => {
-
-console.log("-------",req.body);
-     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    console.log("-------", req.body);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     const safeBaseName = path
       .basename(file.originalname, ext)
@@ -34,9 +33,9 @@ router.post(
   (req, res) => {
     console.log(req.file, "file Name:", req.body.fileName);
 
-console.time("Video Upload");
+    console.time("Video Upload");
     if (!req.file) return res.status(400).send("No file uploaded.");
-console.timeEnd("Video Upload");
+    console.timeEnd("Video Upload");
     console.log("✅ File saved to disk:", req.file.path);
 
     // Prepare the response data
@@ -49,7 +48,6 @@ console.timeEnd("Video Upload");
     // Set content type and end the response with JSON
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(responseData));
-
   }
 );
 
