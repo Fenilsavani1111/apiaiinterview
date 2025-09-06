@@ -392,7 +392,6 @@ exports.getJobpostbyToken = async (req, res) => {
   if (!token) {
     return res.status(400).json({ error: "token is required" });
   }
-  const t = await sequelize.transaction();
   try {
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
@@ -403,13 +402,11 @@ exports.getJobpostbyToken = async (req, res) => {
     if (!job) {
       return res.status(404).json({ error: "Job post not found" });
     }
-    await t.commit();
     res.json({
       message: "Job post found",
       job: job,
     });
   } catch (err) {
-    await t.rollback();
     console.log("err", err);
     res
       .status(400)
