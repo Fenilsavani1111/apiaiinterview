@@ -28,13 +28,20 @@ const SECRET = process.env.LINK_TOKEN_SECRET || "your-very-secret-key";
 
 // Helper to include all nested data
 const fullInclude = [
-  { model: JobRequirement, as: "requirements" },
-  { model: JobResponsibility, as: "responsibilities" },
-  { model: JobSkill, as: "skills" },
+  { model: JobRequirement, as: "requirements", order: [["id", "ASC"]] },
+  { model: JobResponsibility, as: "responsibilities", order: [["id", "ASC"]] },
+  { model: JobSkill, as: "skills", order: [["id", "ASC"]] },
   {
     model: InterviewQuestion,
     as: "interviewQuestions",
-    include: [{ model: InterviewAnswerPoint, as: "suggestedAnswerPoints" }],
+    order: [["id", "ASC"]],
+    include: [
+      {
+        model: InterviewAnswerPoint,
+        as: "suggestedAnswerPoints",
+        order: [["id", "ASC"]],
+      },
+    ],
   },
 ];
 
