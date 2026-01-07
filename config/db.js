@@ -1,4 +1,4 @@
-// db.js
+// apiaiinterview/config/db.js
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
@@ -10,15 +10,21 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "postgres",
-    logging: false,
+    logging: false, // Set to console.log to debug SQL queries
     pool: {
-      max: 20, // limit per app instance
+      max: 20,
       min: 0,
-      acquire: 60000, // wait 60s before timeout
-      idle: 10000, // release idle conn after 10s
+      acquire: 60000,
+      idle: 10000,
     },
     dialectOptions: {
-      connectTimeout: 60000, // optional for MySQL
+      connectTimeout: 60000,
+    },
+    // ✅ CRITICAL: Enable identifier quoting for case-sensitive columns
+    quoteIdentifiers: true,
+    define: {
+      underscored: false, // Keep camelCase
+      freezeTableName: true, // Don't pluralize table names
     },
   }
 );

@@ -1,10 +1,28 @@
+// apiaiinterview/routes/jobPost.js
 const express = require("express");
 const router = express.Router();
 const jobPostController = require("../controllers/jobPostController");
 const uploadFileController = require("../controllers/uploadFileController");
 const resumeParserController = require("../controllers/resumeParserController");
+const authMiddleware = require("../middlewares/auth");
+// Inline admin guard: ensure this is a function even if the admin file is missing or empty
+const adminMiddleware = (req, res, next) => {
+  try {
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ success: false, message: "Forbidden: Admins only" });
+    }
+    next();
+  } catch (err) {
+    console.error('Admin middleware error:', err);
+    return res.status(500).json({ success: false, message: 'Server error in admin middleware' });
+  }
+};
 const multer = require("multer");
 const path = require("path");
+
+// ============================================
+// MULTER CONFIGURATION FOR VIDEO UPLOADS
+// ============================================
 
 // Configure storage for videos
 const storagevideo = multer.diskStorage({
@@ -12,9 +30,8 @@ const storagevideo = multer.diskStorage({
     cb(null, path.join(__dirname, "../uploads")); // uploads folder
   },
   filename: (req, file, cb) => {
-
-console.log("-------",req.body);
-     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    console.log("-------", req.body);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     const safeBaseName = path
       .basename(file.originalname, ext)
@@ -27,16 +44,39 @@ console.log("-------",req.body);
 
 const uploadvideo = multer({ storage: storagevideo });
 
-// Route to upload video
+// Configure storage for resumes and files
+const storage = new multer.memoryStorage();
+const upload = multer({ storage });
+
+// ============================================
+// PUBLIC ROUTES (No authentication required)
+// ============================================
+
+// Get all job posts (public listing)
+router.get("/", jobPostController.getAllJobPosts);
+
+// Get single job post by ID
+router.get("/:id", jobPostController.getJobPostById);
+
+// Candidate routes (public - for job applications)
+router.post("/send-job-link", jobPostController.linkShareJobPost);
+router.post("/get-jobpost-by-token", jobPostController.getJobpostbyToken);
+router.post("/join-job-link", jobPostController.joinJobPostWithToken);
+router.post("/generate-job-token", jobPostController.generateTokenForJobInterviewLink);
+router.post("/update-candidate-byid", jobPostController.updateStudentWithJobpostById);
+router.get("/get-candidate-byid/:id", jobPostController.getCandidateById);
+
+// Video upload for interviews (public - for candidates)
 router.post(
   "/upload-interview-video",
   uploadvideo.single("video"),
   (req, res) => {
     console.log(req.file, "file Name:", req.body.fileName);
 
-console.time("Video Upload");
+    console.time("Video Upload");
     if (!req.file) return res.status(400).send("No file uploaded.");
-console.timeEnd("Video Upload");
+    console.timeEnd("Video Upload");
+    
     console.log("✅ File saved to disk:", req.file.path);
 
     // Prepare the response data
@@ -49,40 +89,10 @@ console.timeEnd("Video Upload");
     // Set content type and end the response with JSON
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(responseData));
-
   }
 );
 
-router.post("/", jobPostController.createJobPost);
-router.get("/", jobPostController.getAllJobPosts);
-router.get("/:id", jobPostController.getJobPostById);
-router.put("/:id", jobPostController.updateJobPost);
-router.delete("/:id", jobPostController.deleteJobPost);
-
-router.post("/send-job-link", jobPostController.linkShareJobPost);
-router.post("/get-jobpost-by-token", jobPostController.getJobpostbyToken);
-router.post("/join-job-link", jobPostController.joinJobPostWithToken);
-router.post(
-  "/generate-job-token",
-  jobPostController.generateTokenForJobInterviewLink
-);
-router.post("/get-recent-candidates", jobPostController.getRecentCandidates);
-router.post("/get-admin-dashboard", jobPostController.getAdminDashbord);
-router.post(
-  "/update-candidate-byid",
-  jobPostController.updateStudentWithJobpostById
-);
-router.get("/get-candidate-byid/:id", jobPostController.getCandidateById);
-router.post(
-  "/get-analytics-dashboard",
-  jobPostController.getAnalyticsDashboard
-);
-
-const storage = new multer.memoryStorage();
-const upload = multer({
-  storage,
-});
-
+// File upload routes (public - for candidates)
 router.post(
   "/upload-resume",
   upload.single("file"),
@@ -95,9 +105,39 @@ router.post(
   resumeParserController.getResumeParser
 );
 
-// router.post(
-//   "/upload-interview-video",
-//   upload.single("video"),
-//   uploadFileController.UploadInterviewVideo
-// );
+// ============================================
+// PROTECTED ADMIN ROUTES (Require admin authentication)
+// ============================================
+
+// Create job post (Admin only)
+router.post("/", authMiddleware, adminMiddleware, jobPostController.createJobPost);
+
+// Update job post (Admin only)
+router.put("/:id", authMiddleware, adminMiddleware, jobPostController.updateJobPost);
+
+// Delete job post (Admin only)
+router.delete("/:id", authMiddleware, adminMiddleware, jobPostController.deleteJobPost);
+
+// Admin dashboard routes (Admin only)
+router.post(
+  "/get-admin-dashboard",
+  authMiddleware,
+  adminMiddleware,
+  jobPostController.getAdminDashbord
+);
+
+router.post(
+  "/get-analytics-dashboard",
+  authMiddleware,
+  adminMiddleware,
+  jobPostController.getAnalyticsDashboard
+);
+
+router.post(
+  "/get-recent-candidates",
+  authMiddleware,
+  adminMiddleware,
+  jobPostController.getRecentCandidates
+);
+
 module.exports = router;
