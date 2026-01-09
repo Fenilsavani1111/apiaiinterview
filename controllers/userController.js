@@ -4,21 +4,15 @@ const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const User = require('../models/User');
 
-// Generate JWT tokens
-const generateTokens = (user) => {
+// Generate JWT token (only access token, stored in localStorage on client)
+const generateToken = (user) => {
   const accessToken = jwt.sign(
-    { id: user.id, username: user.username },
+    { id: user.id, email: user.email },
     process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '3d' }
+    { expiresIn: '7d' } // 7 days validity
   );
 
-  const refreshToken = jwt.sign(
-    { id: user.id, username: user.username },
-    process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
-    { expiresIn: '365d' }
-  );
-
-  return { accessToken, refreshToken };
+  return accessToken;
 };
 
 const userController = {
@@ -29,6 +23,8 @@ const userController = {
     try {
       const { email, password } = req.body;
 
+      console.log('🔐 LOGIN ATTEMPT:', { email });
+
       if (!email || !password) {
         return res.status(400).json({
           success: false,
@@ -36,53 +32,47 @@ const userController = {
         });
       }
 
+      // Find user by email
       const user = await User.findOne({
-        where: {
-          [Op.or]: [
-            { email: email },
-            { username: email }
-          ]
-        }
+        where: { email: email.trim() }
       });
 
       if (!user) {
+        console.log('❌ User not found:', email);
         return res.status(401).json({
           success: false,
           message: 'Invalid credentials',
         });
       }
 
+      // Verify password
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
+        console.log('❌ Invalid password for:', email);
         return res.status(401).json({
           success: false,
           message: 'Invalid credentials',
         });
       }
 
-      const { accessToken, refreshToken } = generateTokens(user);
+      // Generate token
+      const accessToken = generateToken(user);
 
-      await user.update({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
+      console.log('✅ Login successful:', { email: user.email, userId: user.id });
 
       return res.status(200).json({
         success: true,
         message: 'Login successful',
         user: {
           id: user.id,
-          username: user.username,
           email: user.email,
           name: user.name,
           phoneNumber: user.phoneNumber,
-          isAdmin: user.isAdmin,
           access_token: accessToken,
-          refresh_token: refreshToken,
         },
       });
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       return res.status(500).json({
         success: false,
         message: 'Server error during login',
@@ -92,66 +82,68 @@ const userController = {
   },
 
   // ============================================
-  // REGISTER
+  // REGISTER (NO AUTO-LOGIN)
   // ============================================
   register: async (req, res) => {
     try {
-      const { name, username, email, phoneNumber, password } = req.body;
+      const { name, email, phoneNumber, password } = req.body;
 
-      if (!username || !email || !password) {
+      console.log('📝 REGISTER ATTEMPT:', { email, name });
+
+      if (!email || !password) {
         return res.status(400).json({
           success: false,
-          message: 'Username, email, and password are required',
+          message: 'Email and password are required',
         });
       }
 
+      if (!name || name.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Name is required and must be at least 2 characters',
+        });
+      }
+
+      // Check if email already exists
       const existingUser = await User.findOne({
-        where: {
-          [Op.or]: [{ username }, { email }]
-        }
+        where: { email: email.trim() }
       });
 
       if (existingUser) {
+        console.log('❌ Email already exists:', email);
         return res.status(409).json({
           success: false,
-          message: 'Username or email already exists',
+          message: 'Email already exists',
         });
       }
 
+      // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Create new user
       const newUser = await User.create({
-        name,
-        username,
-        email,
-        phoneNumber,
+        name: name.trim(),
+        email: email.trim(),
+        phoneNumber: phoneNumber ? phoneNumber.trim() : null,
         password: hashedPassword,
-        isAdmin: false,
       });
 
-      const { accessToken, refreshToken } = generateTokens(newUser);
+      console.log('✅ Registration successful:', { email: newUser.email, userId: newUser.id });
 
-      await newUser.update({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      });
-
+      // ✅ IMPORTANT: Return success WITHOUT access_token
+      // User must login separately after registration
       return res.status(201).json({
         success: true,
-        message: 'User registered successfully',
+        message: 'User registered successfully. Please login to continue.',
         user: {
           id: newUser.id,
-          username: newUser.username,
           email: newUser.email,
           name: newUser.name,
           phoneNumber: newUser.phoneNumber,
-          isAdmin: newUser.isAdmin,
-          access_token: accessToken,
-          refresh_token: refreshToken,
         },
       });
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('❌ Registration error:', error);
       return res.status(500).json({
         success: false,
         message: 'Server error during registration',
@@ -166,7 +158,7 @@ const userController = {
   profile: async (req, res) => {
     try {
       const user = await User.findByPk(req.user.id, {
-        attributes: ['id', 'username', 'email', 'name', 'phoneNumber', 'isAdmin', 'createdAt', 'updatedAt']
+        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt']
       });
 
       if (!user) {
@@ -181,7 +173,7 @@ const userController = {
         user,
       });
     } catch (error) {
-      console.error('Profile error:', error);
+      console.error('❌ Profile error:', error);
       return res.status(500).json({
         success: false,
         message: 'Server error fetching profile',
@@ -191,7 +183,7 @@ const userController = {
   },
 
   // ============================================
-  // ADMIN: GET ALL USERS (ABSOLUTE FINAL FIX)
+  // GET ALL USERS (Anyone can view)
   // ============================================
   getAllUsers: async (req, res) => {
     try {
@@ -207,32 +199,29 @@ const userController = {
 
       console.log(`📄 Pagination: Page=${page}, Limit=${limit}, Offset=${offset}`);
 
-      // Build the query options with explicit attributes
+      // Build the query options
       const queryOptions = {
         attributes: [
           'id',
-          'username', 
           'email', 
           'name', 
-          'phoneNumber',  // This will be mapped to phone_number
-          'isAdmin',      // This will be mapped to "isAdmin"
+          'phoneNumber',
           'createdAt',
           'updatedAt'
         ],
         limit: limit,
         offset: offset,
         order: [['createdAt', 'DESC']],
-        raw: false  // Important: get model instances, not raw data
+        raw: false
       };
 
-      // Handle search - CRITICAL FIX
+      // Handle search
       if (searchParam !== undefined && searchParam !== null && searchParam.toString().trim() !== '') {
         const searchTerm = searchParam.toString().trim();
         console.log(`🔍 Search filter active: "${searchTerm}"`);
         
         queryOptions.where = {
           [Op.or]: [
-            { username: { [Op.iLike]: `%${searchTerm}%` } },
             { email: { [Op.iLike]: `%${searchTerm}%` } },
             { name: { [Op.iLike]: `%${searchTerm}%` } }
           ]
@@ -251,14 +240,12 @@ const userController = {
       console.log(`📦 Users returned in this page: ${rows.length}`);
       console.log('='.repeat(50));
 
-      // Transform the results to ensure proper format
+      // Transform the results
       const users = rows.map(user => ({
         id: user.id,
-        username: user.username,
         email: user.email,
         name: user.name,
         phoneNumber: user.phoneNumber,
-        isAdmin: user.isAdmin,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }));
@@ -293,14 +280,14 @@ const userController = {
   },
 
   // ============================================
-  // ADMIN: GET USER BY ID
+  // GET USER BY ID
   // ============================================
   getUserById: async (req, res) => {
     try {
       const { id } = req.params;
 
       const user = await User.findByPk(id, {
-        attributes: ['id', 'username', 'email', 'name', 'phoneNumber', 'isAdmin', 'createdAt', 'updatedAt']
+        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt']
       });
 
       if (!user) {
@@ -314,17 +301,15 @@ const userController = {
         success: true,
         user: {
           id: user.id,
-          username: user.username,
           email: user.email,
           name: user.name,
           phoneNumber: user.phoneNumber,
-          isAdmin: user.isAdmin,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         },
       });
     } catch (error) {
-      console.error('Get user by ID error:', error);
+      console.error('❌ Get user by ID error:', error);
       return res.status(500).json({
         success: false,
         message: 'Server error fetching user',
@@ -334,12 +319,12 @@ const userController = {
   },
 
   // ============================================
-  // ADMIN: UPDATE USER
+  // UPDATE USER
   // ============================================
   updateUser: async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, username, email, phoneNumber, password, isAdmin } = req.body;
+      const { name, email, phoneNumber, password } = req.body;
 
       const user = await User.findByPk(id);
 
@@ -350,16 +335,7 @@ const userController = {
         });
       }
 
-      if (username && username !== user.username) {
-        const existingUser = await User.findOne({ where: { username } });
-        if (existingUser) {
-          return res.status(409).json({
-            success: false,
-            message: 'Username already exists',
-          });
-        }
-      }
-
+      // Check if new email already exists (if changing email)
       if (email && email !== user.email) {
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
@@ -372,10 +348,8 @@ const userController = {
 
       const updateData = {};
       if (name !== undefined) updateData.name = name;
-      if (username !== undefined) updateData.username = username;
       if (email !== undefined) updateData.email = email;
       if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
-      if (isAdmin !== undefined) updateData.isAdmin = isAdmin;
 
       if (password) {
         updateData.password = await bcrypt.hash(password, 10);
@@ -384,7 +358,7 @@ const userController = {
       await user.update(updateData);
 
       const updatedUser = await User.findByPk(id, {
-        attributes: ['id', 'username', 'email', 'name', 'phoneNumber', 'isAdmin', 'createdAt', 'updatedAt']
+        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt']
       });
 
       return res.status(200).json({
@@ -392,17 +366,15 @@ const userController = {
         message: 'User updated successfully',
         user: {
           id: updatedUser.id,
-          username: updatedUser.username,
           email: updatedUser.email,
           name: updatedUser.name,
           phoneNumber: updatedUser.phoneNumber,
-          isAdmin: updatedUser.isAdmin,
           createdAt: updatedUser.createdAt,
           updatedAt: updatedUser.updatedAt
         },
       });
     } catch (error) {
-      console.error('Update user error:', error);
+      console.error('❌ Update user error:', error);
       return res.status(500).json({
         success: false,
         message: 'Server error updating user',
@@ -412,12 +384,13 @@ const userController = {
   },
 
   // ============================================
-  // ADMIN: DELETE USER
+  // DELETE USER
   // ============================================
   deleteUser: async (req, res) => {
     try {
       const { id } = req.params;
 
+      // Prevent deleting own account
       if (parseInt(id) === req.user.id) {
         return res.status(400).json({
           success: false,
@@ -441,7 +414,7 @@ const userController = {
         message: 'User deleted successfully',
       });
     } catch (error) {
-      console.error('Delete user error:', error);
+      console.error('❌ Delete user error:', error);
       return res.status(500).json({
         success: false,
         message: 'Server error deleting user',
