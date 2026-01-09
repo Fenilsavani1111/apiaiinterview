@@ -53,14 +53,12 @@ const uploadvideo = multer({ storage: storagevideo });
 const storage = new multer.memoryStorage();
 const upload = multer({ storage });
 
-// ============================================
-// PUBLIC ROUTES (No authentication required)
-// ============================================
 
-// Get all job posts (public listing)
+
+
 router.get("/", jobPostController.getAllJobPosts);
 
-// Get single job post by ID
+
 router.get("/:id", jobPostController.getJobPostById);
 
 // Candidate routes (public - for job applications)
