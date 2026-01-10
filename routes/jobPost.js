@@ -1,4 +1,4 @@
-// apiaiinterview/routes/jobPost.js - COMPLETE WITH STUDENT EXAM LINK ROUTE
+// apiaiinterview/routes/jobPost.js - COMPLETE WITH EMAIL VERIFICATION AND STUDENT EXAM LINK
 const express = require("express");
 const router = express.Router();
 const jobPostController = require("../controllers/jobPostController");
@@ -49,20 +49,54 @@ router.get("/", jobPostController.getAllJobPosts);
 // Get job post by ID (Public)
 router.get("/:id", jobPostController.getJobPostById);
 
-// Candidate routes (public - for job applications)
+// ============================================
+// JOB SHARING & EMAIL ROUTES (Public)
+// ============================================
+
+// Send job link via email (Public)
 router.post("/send-job-link", jobPostController.linkShareJobPost);
+
+// Send student/candidate exam link via email (Public)
 router.post("/send-student-exam-link", jobPostController.sendStudentExamLink);
-router.post("/get-jobpost-by-token", jobPostController.getJobpostbyToken);
-router.post("/join-job-link", jobPostController.joinJobPostWithToken);
+
+// Generate token for job interview link (Public)
 router.post(
   "/generate-job-token",
   jobPostController.generateTokenForJobInterviewLink
 );
+
+// Get job post by token (Public)
+router.post("/get-jobpost-by-token", jobPostController.getJobpostbyToken);
+
+// ============================================
+// INTERVIEW ACCESS ROUTES (Public - With Email Verification)
+// ============================================
+
+// NEW: Verify email before allowing interview access
+router.post(
+  "/verify-email-for-interview",
+  jobPostController.verifyEmailForInterview
+);
+
+// Join interview with token (requires email verification)
+router.post("/join-job-link", jobPostController.joinJobPostWithToken);
+
+// ============================================
+// CANDIDATE INTERVIEW ROUTES (Public)
+// ============================================
+
+// Update candidate interview details by ID
 router.post(
   "/update-candidate-byid",
   jobPostController.updateStudentWithJobpostById
 );
+
+// Get candidate interview details by ID
 router.get("/get-candidate-byid/:id", jobPostController.getCandidateById);
+
+// ============================================
+// FILE UPLOAD ROUTES (Public - For Candidates)
+// ============================================
 
 // Video upload for interviews (public - for candidates)
 router.post(
@@ -90,13 +124,14 @@ router.post(
   }
 );
 
-// File upload routes (public - for candidates)
+// Resume/file upload (public - for candidates)
 router.post(
   "/upload-resume",
   upload.single("file"),
   uploadFileController.UploadResume
 );
 
+// Resume parser (optional - commented out)
 // router.post(
 //   "/resume-parser",
 //   upload.single("file"),
@@ -108,39 +143,33 @@ router.post(
 // ============================================
 
 // Create job post (Admin only)
-router.post(
-  "/",
-  authMiddleware,
-  jobPostController.createJobPost
-);
+router.post("/", authMiddleware, jobPostController.createJobPost);
 
 // Update job post (Admin only)
-router.put(
-  "/:id",
-  authMiddleware,
-  jobPostController.updateJobPost
-);
+router.put("/:id", authMiddleware, jobPostController.updateJobPost);
 
 // Delete job post (Admin only)
-router.delete(
-  "/:id",
-  authMiddleware,
-  jobPostController.deleteJobPost
-);
+router.delete("/:id", authMiddleware, jobPostController.deleteJobPost);
 
-// Admin dashboard routes (Admin only)
+// ============================================
+// ADMIN DASHBOARD ROUTES (Require admin authentication)
+// ============================================
+
+// Get admin dashboard data (Admin only)
 router.post(
   "/get-admin-dashboard",
   authMiddleware,
   jobPostController.getAdminDashbord
 );
 
+// Get analytics dashboard data (Admin only)
 router.post(
   "/get-analytics-dashboard",
   authMiddleware,
   jobPostController.getAnalyticsDashboard
 );
 
+// Get recent candidates (Admin only)
 router.post(
   "/get-recent-candidates",
   authMiddleware,
