@@ -14,29 +14,20 @@ const User = sequelize.define('User', {
     allowNull: true,
     field: 'name'
   },
-  username: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    field: 'username',
-    validate: {
-      notEmpty: true,
-      len: [3, 50]
-    }
-  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
     field: 'email',
     validate: {
-      isEmail: true
+      isEmail: true,
+      notEmpty: true
     }
   },
   phoneNumber: {
     type: DataTypes.STRING,
     allowNull: true,
-    field: 'phone_number'  // Database has phone_number
+    field: 'phone_number'
   },
   password: {
     type: DataTypes.STRING,
@@ -45,22 +36,6 @@ const User = sequelize.define('User', {
     validate: {
       notEmpty: true
     }
-  },
-  isAdmin: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false,
-    field: 'isAdmin'  // Database has isAdmin (case-sensitive)
-  },
-  access_token: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    field: 'access_token'
-  },
-  refresh_token: {
-    type: DataTypes.TEXT,
-    allowNull: true,
-    field: 'refresh_token'
   },
   createdAt: {
     type: DataTypes.DATE,

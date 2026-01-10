@@ -7,21 +7,7 @@ const uploadFileController = require("../controllers/uploadFileController");
 const authMiddleware = require("../middlewares/auth");
 
 // Inline admin guard: ensure this is a function even if the admin file is missing or empty
-const adminMiddleware = (req, res, next) => {
-  try {
-    if (!req.user || !req.user.isAdmin) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Forbidden: Admins only" });
-    }
-    next();
-  } catch (err) {
-    console.error("Admin middleware error:", err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error in admin middleware" });
-  }
-};
+
 const multer = require("multer");
 const path = require("path");
 
@@ -53,14 +39,12 @@ const uploadvideo = multer({ storage: storagevideo });
 const storage = new multer.memoryStorage();
 const upload = multer({ storage });
 
-// ============================================
-// PUBLIC ROUTES (No authentication required)
-// ============================================
 
-// Get all job posts (public listing)
+
+
 router.get("/", jobPostController.getAllJobPosts);
 
-// Get single job post by ID
+
 router.get("/:id", jobPostController.getJobPostById);
 
 // Candidate routes (public - for job applications)
@@ -124,7 +108,7 @@ router.post(
 router.post(
   "/",
   authMiddleware,
-  adminMiddleware,
+ 
   jobPostController.createJobPost
 );
 
@@ -132,7 +116,7 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
-  adminMiddleware,
+ 
   jobPostController.updateJobPost
 );
 
@@ -140,7 +124,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  adminMiddleware,
+
   jobPostController.deleteJobPost
 );
 
@@ -148,21 +132,21 @@ router.delete(
 router.post(
   "/get-admin-dashboard",
   authMiddleware,
-  adminMiddleware,
+
   jobPostController.getAdminDashbord
 );
 
 router.post(
   "/get-analytics-dashboard",
   authMiddleware,
-  adminMiddleware,
+  
   jobPostController.getAnalyticsDashboard
 );
 
 router.post(
   "/get-recent-candidates",
   authMiddleware,
-  adminMiddleware,
+  
   jobPostController.getRecentCandidates
 );
 
