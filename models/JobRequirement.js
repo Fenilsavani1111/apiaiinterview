@@ -4,4 +4,4 @@ module.exports = (sequelize) => {
     requirement: { type: DataTypes.TEXT, allowNull: false },
   });
   return JobRequirement;
-}; 
+};

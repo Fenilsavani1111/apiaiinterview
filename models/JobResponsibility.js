@@ -4,4 +4,4 @@ module.exports = (sequelize) => {
     responsibility: { type: DataTypes.TEXT, allowNull: false },
   });
   return JobResponsibility;
-}; 
+};

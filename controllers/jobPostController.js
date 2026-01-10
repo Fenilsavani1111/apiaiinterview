@@ -8,10 +8,10 @@ const {
   sequelize,
   StudentsWithJobPost,
   StudentInterviewAnswer,
-} = require("../models");
-const jwt = require("jsonwebtoken");
-const { sendJobLinkEmail } = require("../utils/mailService");
-const { Op, fn, col, literal } = require("sequelize");
+} = require('../models');
+const jwt = require('jsonwebtoken');
+const { sendJobLinkEmail } = require('../utils/mailService');
+const { Op, fn, col, literal } = require('sequelize');
 const {
   startOfWeek,
   subWeeks,
@@ -22,24 +22,24 @@ const {
   format,
   getMonth,
   getYear,
-} = require("date-fns");
-const { getPercentage } = require("../utils/helper");
-const SECRET = process.env.LINK_TOKEN_SECRET || "your-very-secret-key";
+} = require('date-fns');
+const { getPercentage } = require('../utils/helper');
+const SECRET = process.env.LINK_TOKEN_SECRET || 'your-very-secret-key';
 
 // Helper to include all nested data
 const fullInclude = [
-  { model: JobRequirement, as: "requirements", order: [["id", "ASC"]] },
-  { model: JobResponsibility, as: "responsibilities", order: [["id", "ASC"]] },
-  { model: JobSkill, as: "skills", order: [["id", "ASC"]] },
+  { model: JobRequirement, as: 'requirements', order: [['id', 'ASC']] },
+  { model: JobResponsibility, as: 'responsibilities', order: [['id', 'ASC']] },
+  { model: JobSkill, as: 'skills', order: [['id', 'ASC']] },
   {
     model: InterviewQuestion,
-    as: "interviewQuestions",
-    order: [["id", "ASC"]],
+    as: 'interviewQuestions',
+    order: [['id', 'ASC']],
     include: [
       {
         model: InterviewAnswerPoint,
-        as: "suggestedAnswerPoints",
-        order: [["id", "ASC"]],
+        as: 'suggestedAnswerPoints',
+        order: [['id', 'ASC']],
       },
     ],
   },
@@ -83,10 +83,10 @@ const transformJobPostForFrontend = (jobPost) => {
         isRequired: true,
         order: q.id,
       })) || [],
-    status: jobPost.status || "draft",
+    status: jobPost.status || 'draft',
     createdAt: jobPost.createdAt,
     updatedAt: jobPost.updatedAt,
-    createdBy: jobPost.createdBy || "admin",
+    createdBy: jobPost.createdBy || 'admin',
     shareableUrl: jobPost.shareableUrl,
     applicants: jobPost.applicants || 0,
     interviews: jobPost.interviews || 0,
@@ -213,6 +213,7 @@ exports.getAllJobPosts = async (req, res) => {
     );
     res.json(damiposts);
   } catch (err) {
+    console.log('err Failed to fetch jobpost', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -226,7 +227,7 @@ exports.getJobPostById = async (req, res) => {
     const candidates = await StudentsWithJobPost.findAll({
       where: { jobPostId: req.params.id },
     });
-    if (!post) return res.status(404).json({ error: "Job post not found" });
+    if (!post) return res.status(404).json({ error: 'Job post not found' });
     res.json({
       post: transformJobPostForFrontend(post),
       candidates: candidates,
@@ -257,7 +258,7 @@ exports.updateJobPost = async (req, res) => {
     } = req.body;
 
     const jobPost = await JobPost.findByPk(id);
-    if (!jobPost) return res.status(404).json({ error: "Job post not found" });
+    if (!jobPost) return res.status(404).json({ error: 'Job post not found' });
 
     // Map frontend field names to backend field names
     const jobPostData = {
@@ -351,8 +352,8 @@ exports.deleteJobPost = async (req, res) => {
   try {
     const id = req.params.id;
     const deleted = await JobPost.destroy({ where: { id } });
-    if (!deleted) return res.status(404).json({ error: "Job post not found" });
-    res.json({ message: "Job post deleted" });
+    if (!deleted) return res.status(404).json({ error: 'Job post not found' });
+    res.json({ message: 'Job post deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -363,26 +364,26 @@ exports.linkShareJobPost = async (req, res) => {
   const { jobId, email } = req.body;
   const t = await sequelize.transaction();
   if (!jobId || !email) {
-    return res.status(400).json({ error: "jobId and email are required" });
+    return res.status(400).json({ error: 'jobId and email are required' });
   }
   try {
     // Verify job exists
     const job = await JobPost.findByPk(jobId);
     if (!job) {
-      return res.status(404).json({ error: "Job post not found" });
+      return res.status(404).json({ error: 'Job post not found' });
     }
     // Generate token
-    const token = jwt.sign({ jobId }, SECRET, { expiresIn: "2d" });
+    const token = jwt.sign({ jobId }, SECRET, { expiresIn: '2d' });
 
     // Send email with token
     await sendJobLinkEmail(email, token);
-    res.json({ message: "Email sent successfully" });
+    res.json({ message: 'Email sent successfully' });
   } catch (err) {
     await t.rollback();
-    console.log("err", err);
+    console.log('err', err);
     res
       .status(500)
-      .json({ error: "Failed to send email", details: err.message });
+      .json({ error: 'Failed to send email', details: err.message });
   }
 };
 
@@ -390,7 +391,7 @@ exports.linkShareJobPost = async (req, res) => {
 exports.getJobpostbyToken = async (req, res) => {
   const { token } = req.body;
   if (!token) {
-    return res.status(400).json({ error: "token is required" });
+    return res.status(400).json({ error: 'token is required' });
   }
   try {
     const decoded = jwt.verify(token, SECRET);
@@ -400,17 +401,17 @@ exports.getJobpostbyToken = async (req, res) => {
       include: fullInclude,
     });
     if (!job) {
-      return res.status(404).json({ error: "Job post not found" });
+      return res.status(404).json({ error: 'Job post not found' });
     }
     res.json({
-      message: "Job post found",
+      message: 'Job post found',
       job: job,
     });
   } catch (err) {
-    console.log("err", err);
+    console.log('err', err);
     res
       .status(400)
-      .json({ error: "Invalid or expired token", details: err.message });
+      .json({ error: 'Invalid or expired token', details: err.message });
   }
 };
 
@@ -418,7 +419,7 @@ exports.getJobpostbyToken = async (req, res) => {
 exports.joinJobPostWithToken = async (req, res) => {
   const { token } = req.body;
   if (!token) {
-    return res.status(400).json({ error: "token is required" });
+    return res.status(400).json({ error: 'token is required' });
   }
   const t = await sequelize.transaction();
   try {
@@ -429,15 +430,15 @@ exports.joinJobPostWithToken = async (req, res) => {
       include: [
         {
           model: InterviewQuestion,
-          as: "interviewQuestions",
+          as: 'interviewQuestions',
           include: [
-            { model: InterviewAnswerPoint, as: "suggestedAnswerPoints" },
+            { model: InterviewAnswerPoint, as: 'suggestedAnswerPoints' },
           ],
         },
       ],
     });
     if (!job) {
-      return res.status(404).json({ error: "Job post not found" });
+      return res.status(404).json({ error: 'Job post not found' });
     }
     const {
       email,
@@ -453,10 +454,10 @@ exports.joinJobPostWithToken = async (req, res) => {
       where: { email: email, jobPostId: jobId },
     });
     if (findCandidate) {
-      return res.status(404).json({ error: "Candidate already exists." });
+      return res.status(404).json({ error: 'Candidate already exists.' });
     }
 
-    await job.increment("applicants", { by: 1 });
+    await job.increment('applicants', { by: 1 });
     await job.reload();
     const studentData = {
       email,
@@ -468,12 +469,12 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills: skills?.length > 0 ? skills : [],
     };
-    let candidateId = "";
+    let candidateId = '';
     const studentsWithJobPostdata = await StudentsWithJobPost.create(
       {
         ...studentData,
         appliedDate: new Date(),
-        status: "inprogress",
+        status: 'inprogress',
         jobPostId: jobId,
       },
       {
@@ -498,7 +499,7 @@ exports.joinJobPostWithToken = async (req, res) => {
       })) || [];
 
     res.json({
-      message: "User joined successfully",
+      message: 'User joined successfully',
       jobId,
       jobTitle: job.jobTitle,
       activeJoinUserCount: job.activeJoinUserCount,
@@ -507,10 +508,10 @@ exports.joinJobPostWithToken = async (req, res) => {
     });
   } catch (err) {
     await t.rollback();
-    console.log("err", err);
+    console.log('err', err);
     res
       .status(400)
-      .json({ error: "Invalid or expired token", details: err.message });
+      .json({ error: 'Invalid or expired token', details: err.message });
   }
 };
 
@@ -518,21 +519,21 @@ exports.joinJobPostWithToken = async (req, res) => {
 exports.generateTokenForJobInterviewLink = async (req, res) => {
   const { jobId } = req.body;
   if (!jobId) {
-    return res.status(400).json({ error: "jobId are required" });
+    return res.status(400).json({ error: 'jobId are required' });
   }
   try {
     // Verify job exists
     const job = await JobPost.findByPk(jobId);
     if (!job) {
-      return res.status(404).json({ error: "Job post not found" });
+      return res.status(404).json({ error: 'Job post not found' });
     }
     // Generate token
-    const token = jwt.sign({ jobId }, SECRET, { expiresIn: "2d" });
-    res.json({ token, token, message: "Token generated successfully" });
+    const token = jwt.sign({ jobId }, SECRET, { expiresIn: '2d' });
+    res.json({ token, token, message: 'Token generated successfully' });
   } catch (err) {
-    console.log("err", err);
+    console.log('err', err);
     res.status(500).json({
-      error: "Failed to generate job interview link token",
+      error: 'Failed to generate job interview link token',
       details: err.message,
     });
   }
@@ -543,16 +544,16 @@ exports.getRecentCandidates = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const candidates = await StudentsWithJobPost.findAll({
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
       limit: 5,
-      include: [{ model: JobPost, as: "JobPost" }],
+      include: [{ model: JobPost, as: 'JobPost' }],
     });
     res.json({ candidates: candidates });
   } catch (err) {
-    console.log("err", err);
+    console.log('err', err);
     await t.rollback();
     res.status(500).json({
-      error: "Failed to generate job interview link token",
+      error: 'Failed to generate job interview link token',
       details: err.message,
     });
   }
@@ -569,7 +570,7 @@ exports.updateStudentWithJobpostById = async (req, res) => {
       where: { id: candidateId },
     });
     if (!candidate) {
-      return res.status(404).json({ error: "Candidate not found" });
+      return res.status(404).json({ error: 'Candidate not found' });
     }
     let deletdques = await StudentInterviewAnswer.destroy({
       where: {
@@ -584,7 +585,7 @@ exports.updateStudentWithJobpostById = async (req, res) => {
       { transaction: t }
     );
     if (deletdques === 0) {
-      await JobPost.increment("interviews", {
+      await JobPost.increment('interviews', {
         by: 1,
         where: { id: candidate?.jobPostId },
         transaction: t,
@@ -598,15 +599,15 @@ exports.updateStudentWithJobpostById = async (req, res) => {
     });
     const updated = await StudentsWithJobPost.findByPk(candidateId);
     res.json({
-      message: "Candidate details updated successfully",
+      message: 'Candidate details updated successfully',
       candidate: updated,
     });
   } catch (err) {
     await t.rollback();
-    console.log("err", err);
+    console.log('err', err);
     res
       .status(400)
-      .json({ error: "Invalid or expired token", details: err.message });
+      .json({ error: 'Invalid or expired token', details: err.message });
   }
 };
 
@@ -615,21 +616,21 @@ exports.getCandidateById = async (req, res) => {
   try {
     const candidate = await StudentsWithJobPost.findByPk(req.params.id, {
       include: [
-        { model: JobPost, as: "JobPost" },
+        { model: JobPost, as: 'JobPost' },
         {
           model: StudentInterviewAnswer,
-          as: "StudentInterviewAnswer",
+          as: 'StudentInterviewAnswer',
           include: [
             {
               model: InterviewQuestion,
-              as: "Question", // 👈 Match the alias used in the association
+              as: 'Question', // 👈 Match the alias used in the association
             },
           ],
         },
       ],
     });
     if (!candidate)
-      return res.status(404).json({ error: "Job post not found" });
+      return res.status(404).json({ error: 'Job post not found' });
     res.json({
       candidate: candidate,
     });
@@ -642,8 +643,8 @@ exports.getCandidateById = async (req, res) => {
 exports.getAdminDashbord = async (req, res) => {
   try {
     const candidates = await StudentsWithJobPost.findAll({
-      order: [["createdAt", "DESC"]],
-      include: [{ model: JobPost, as: "JobPost" }],
+      order: [['createdAt', 'DESC']],
+      include: [{ model: JobPost, as: 'JobPost' }],
     });
     const total_interview = await StudentsWithJobPost.count({
       where: {
@@ -684,8 +685,8 @@ exports.getAdminDashbord = async (req, res) => {
       curr_week_interview
     );
     const jobs = await JobPost.findAll();
-    let active_jobs = jobs.filter((v) => v?.status === "draft")?.length;
-    let inactive_jobs = jobs.filter((v) => v?.status !== "draft")?.length;
+    let active_jobs = jobs.filter((v) => v?.status === 'draft')?.length;
+    let inactive_jobs = jobs.filter((v) => v?.status !== 'draft')?.length;
     const total_candidates = await StudentsWithJobPost.count({});
     // Current month's range
     const currentMonthStart = startOfMonth(new Date());
@@ -735,9 +736,9 @@ exports.getAdminDashbord = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log("err", err);
+    console.log('err', err);
     res.status(500).json({
-      error: "Failed to generate job interview link token",
+      error: 'Failed to generate job interview link token',
       details: err.message,
     });
   }
@@ -747,7 +748,7 @@ exports.getAdminDashbord = async (req, res) => {
 const weeks = [];
 for (let i = 6; i >= 0; i--) {
   const date = startOfWeek(subWeeks(new Date(), i), { weekStartsOn: 1 }); // Monday
-  weeks.push(format(date, "dd-MM-yyyy"));
+  weeks.push(format(date, 'dd-MM-yyyy'));
 }
 
 // GET analytics dashboard
@@ -760,8 +761,8 @@ exports.getAnalyticsDashboard = async (req, res) => {
     const prevMonthStart = startOfMonth(subMonths(new Date(), 1));
     const prevMonthEnd = endOfMonth(subMonths(new Date(), 1));
     const candidates = await StudentsWithJobPost.findAll({
-      order: [["createdAt", "DESC"]],
-      include: [{ model: JobPost, as: "JobPost" }],
+      order: [['createdAt', 'DESC']],
+      include: [{ model: JobPost, as: 'JobPost' }],
     });
     // total interview data
     const total_interview = await StudentsWithJobPost.count({
@@ -831,8 +832,8 @@ exports.getAnalyticsDashboard = async (req, res) => {
       // Select the week start and average totalScore rounded to 2 decimals
       attributes: [
         // Truncate createdAt to the week (e.g., Monday of each week)
-        [fn("DATE_TRUNC", "week", col("createdAt")), "week_start"],
-        [fn("ROUND", fn("AVG", col("totalScore")), 2), "avg_score"],
+        [fn('DATE_TRUNC', 'week', col('createdAt')), 'week_start'],
+        [fn('ROUND', fn('AVG', col('totalScore')), 2), 'avg_score'],
       ],
 
       // Filter for records within the last 7 weeks
@@ -843,10 +844,10 @@ exports.getAnalyticsDashboard = async (req, res) => {
       },
 
       // Group results by the week start
-      group: [fn("DATE_TRUNC", "week", col("createdAt"))],
+      group: [fn('DATE_TRUNC', 'week', col('createdAt'))],
 
       // Sort weeks from most recent to oldest
-      order: [[fn("DATE_TRUNC", "week", col("createdAt")), "ASC"]],
+      order: [[fn('DATE_TRUNC', 'week', col('createdAt')), 'ASC']],
 
       // Return plain JavaScript objects instead of Sequelize instances
       raw: true,
@@ -854,7 +855,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
     // Map last7weekdata for quick lookup
     const last7weekdataMap = new Map(
       last7weekdata.map((row) => [
-        format(new Date(row.week_start), "dd-MM-yyyy"),
+        format(new Date(row.week_start), 'dd-MM-yyyy'),
         parseFloat(row.avg_score ?? 0),
       ])
     );
@@ -867,13 +868,13 @@ exports.getAnalyticsDashboard = async (req, res) => {
     const months = [];
     for (let i = 6; i >= 0; i--) {
       const monthStart = startOfMonth(subMonths(new Date(), i));
-      months.push(format(monthStart, "yyyy-MM"));
+      months.push(format(monthStart, 'yyyy-MM'));
     }
     // get last 7 months interview
     const last7monthsinterview = await StudentsWithJobPost.findAll({
       attributes: [
-        [fn("DATE_TRUNC", "month", col("interviewDate")), "month"],
-        [fn("COUNT", "*"), "count"],
+        [fn('DATE_TRUNC', 'month', col('interviewDate')), 'month'],
+        [fn('COUNT', '*'), 'count'],
       ],
       where: {
         interviewDate: {
@@ -881,14 +882,14 @@ exports.getAnalyticsDashboard = async (req, res) => {
           [Op.gte]: literal(`DATE_TRUNC('month', NOW()) - INTERVAL '6 months'`),
         },
       },
-      group: [fn("DATE_TRUNC", "month", col("interviewDate"))],
-      order: [[fn("DATE_TRUNC", "month", col("interviewDate")), "ASC"]],
+      group: [fn('DATE_TRUNC', 'month', col('interviewDate'))],
+      order: [[fn('DATE_TRUNC', 'month', col('interviewDate')), 'ASC']],
       raw: true,
     });
     // Normalize DB result: Map from 'YYYY-MM' to count
     const last7monthsinterviewMap = new Map(
       last7monthsinterview.map((row) => [
-        format(new Date(row.month), "yyyy-MM"),
+        format(new Date(row.month), 'yyyy-MM'),
         parseInt(row.count),
       ])
     );
@@ -901,15 +902,15 @@ exports.getAnalyticsDashboard = async (req, res) => {
     // skill performance
     const scores = await StudentsWithJobPost.findAll({
       attributes: [
-        "id",
-        "interviewDate",
-        "totalScore",
-        [literal(`(scores->>'communication')::int`), "communication"],
-        [literal(`(scores->>'technical')::int`), "technical"],
-        [literal(`(scores->>'problemSolving')::int`), "problemSolving"],
-        [literal(`(scores->>'leadership')::int`), "leadership"],
-        [literal(`(scores->>'bodyLanguage')::int`), "bodyLanguage"],
-        [literal(`(scores->>'confidence')::int`), "confidence"],
+        'id',
+        'interviewDate',
+        'totalScore',
+        [literal(`(scores->>'communication')::int`), 'communication'],
+        [literal(`(scores->>'technical')::int`), 'technical'],
+        [literal(`(scores->>'problemSolving')::int`), 'problemSolving'],
+        [literal(`(scores->>'leadership')::int`), 'leadership'],
+        [literal(`(scores->>'bodyLanguage')::int`), 'bodyLanguage'],
+        [literal(`(scores->>'confidence')::int`), 'confidence'],
       ],
       where: {
         interviewDate: {
@@ -922,12 +923,12 @@ exports.getAnalyticsDashboard = async (req, res) => {
 
     // Skills
     const skillKeys = [
-      "communication",
-      "technical",
-      "problemSolving",
-      "leadership",
-      "bodyLanguage",
-      "confidence",
+      'communication',
+      'technical',
+      'problemSolving',
+      'leadership',
+      'bodyLanguage',
+      'confidence',
     ];
     // Initial structure
     const skillTrends = {};
@@ -937,11 +938,11 @@ exports.getAnalyticsDashboard = async (req, res) => {
     // Group by month
     const now = new Date(); // Current date
     const prevDate = subMonths(now, 1); // Date one month ago
-    const currentMonthKey = format(now, "yyyy-MM");
-    const previousMonthKey = format(prevDate, "yyyy-MM");
+    const currentMonthKey = format(now, 'yyyy-MM');
+    const previousMonthKey = format(prevDate, 'yyyy-MM');
     scores.forEach((record) => {
       if (!record.interviewDate) return;
-      const dateKey = format(new Date(record.interviewDate), "yyyy-MM");
+      const dateKey = format(new Date(record.interviewDate), 'yyyy-MM');
       const isCurrent = dateKey === currentMonthKey;
       const isPrevious = dateKey === previousMonthKey;
 
@@ -976,9 +977,9 @@ exports.getAnalyticsDashboard = async (req, res) => {
           [Op.between]: [currentMonthStart, currentMonthEnd],
         },
       },
-      order: [["overallScore", "DESC"]],
+      order: [['overallScore', 'DESC']],
       limit: 5,
-      include: [{ model: JobPost, as: "JobPost" }],
+      include: [{ model: JobPost, as: 'JobPost' }],
     });
 
     res.json({
@@ -998,7 +999,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log("err", err);
+    console.log('err', err);
     res.status(500).json({ error: err.message });
   }
 };

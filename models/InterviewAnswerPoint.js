@@ -4,4 +4,4 @@ module.exports = (sequelize) => {
     answerPoint: { type: DataTypes.TEXT, allowNull: false },
   });
   return InterviewAnswerPoint;
-}; 
+};

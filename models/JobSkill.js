@@ -4,4 +4,4 @@ module.exports = (sequelize) => {
     skill: { type: DataTypes.STRING, allowNull: false },
   });
   return JobSkill;
-}; 
+};
