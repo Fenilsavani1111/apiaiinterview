@@ -1,4 +1,4 @@
-// apiaiinterview/routes/jobPost.js
+// apiaiinterview/routes/jobPost.js - COMPLETE WITH STUDENT EXAM LINK ROUTE
 const express = require("express");
 const router = express.Router();
 const jobPostController = require("../controllers/jobPostController");
@@ -39,16 +39,19 @@ const uploadvideo = multer({ storage: storagevideo });
 const storage = new multer.memoryStorage();
 const upload = multer({ storage });
 
+// ============================================
+// PUBLIC ROUTES (No authentication required)
+// ============================================
 
-
-
+// Get all job posts (Public)
 router.get("/", jobPostController.getAllJobPosts);
 
-
+// Get job post by ID (Public)
 router.get("/:id", jobPostController.getJobPostById);
 
 // Candidate routes (public - for job applications)
 router.post("/send-job-link", jobPostController.linkShareJobPost);
+router.post("/send-student-exam-link", jobPostController.sendStudentExamLink);
 router.post("/get-jobpost-by-token", jobPostController.getJobpostbyToken);
 router.post("/join-job-link", jobPostController.joinJobPostWithToken);
 router.post(
@@ -108,7 +111,6 @@ router.post(
 router.post(
   "/",
   authMiddleware,
- 
   jobPostController.createJobPost
 );
 
@@ -116,7 +118,6 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
- 
   jobPostController.updateJobPost
 );
 
@@ -124,7 +125,6 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-
   jobPostController.deleteJobPost
 );
 
@@ -132,21 +132,18 @@ router.delete(
 router.post(
   "/get-admin-dashboard",
   authMiddleware,
-
   jobPostController.getAdminDashbord
 );
 
 router.post(
   "/get-analytics-dashboard",
   authMiddleware,
-  
   jobPostController.getAnalyticsDashboard
 );
 
 router.post(
   "/get-recent-candidates",
   authMiddleware,
-  
   jobPostController.getRecentCandidates
 );
 

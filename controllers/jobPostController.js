@@ -1,3 +1,4 @@
+// apiaiinterview/controllers/jobPostController.js - COMPLETE WITH STUDENT EXAM LINK FUNCTION
 const {
   JobPost,
   JobRequirement,
@@ -10,7 +11,7 @@ const {
   StudentInterviewAnswer,
 } = require("../models");
 const jwt = require("jsonwebtoken");
-const { sendJobLinkEmail } = require("../utils/mailService");
+const { sendJobLinkEmail, sendStudentExamEmail } = require("../utils/mailService");
 const { Op, fn, col, literal } = require("sequelize");
 const {
   startOfWeek,
@@ -116,6 +117,7 @@ exports.createJobPost = async (req, res) => {
       responsibilities = [],
       skills = [],
       questions = [],
+      students = [], // Add students array
     } = req.body;
 
     // Map frontend field names to backend field names
@@ -192,6 +194,24 @@ exports.createJobPost = async (req, res) => {
         );
       }
     }
+    
+    // Students - Add students uploaded during job creation
+    if (students && students.length > 0) {
+      console.log(`📝 Creating ${students.length} students for job ${jobPost.id}`);
+      await StudentsWithJobPost.bulkCreate(
+        students.map((student) => ({
+          name: student.name,
+          email: student.email.toLowerCase(),
+          phoneNumber: student.phoneNumber,
+          mobile: student.phoneNumber, // Also store in mobile field
+          jobPostId: jobPost.id,
+          status: 'pending',
+        })),
+        { transaction: t }
+      );
+      console.log(`✅ Successfully created ${students.length} students`);
+    }
+    
     await t.commit();
     const created = await JobPost.findByPk(jobPost.id, {
       include: fullInclude,
@@ -386,6 +406,88 @@ exports.linkShareJobPost = async (req, res) => {
   }
 };
 
+// ============================================
+// SEND STUDENT EXAM LINK (NEW FUNCTION)
+// ============================================
+exports.sendStudentExamLink = async (req, res) => {
+  const { jobId, emails, messageTemplate, students } = req.body;
+  
+  if (!jobId || !emails || !Array.isArray(emails) || emails.length === 0) {
+    return res.status(400).json({ 
+      error: "jobId and emails array are required" 
+    });
+  }
+
+  try {
+    console.log('📧 SEND STUDENT EXAM LINK REQUEST:', { 
+      jobId, 
+      emailCount: emails.length 
+    });
+
+    // Verify job exists
+    const job = await JobPost.findByPk(jobId);
+    if (!job) {
+      return res.status(404).json({ error: "Job post not found" });
+    }
+
+    // Generate token
+    const token = jwt.sign({ jobId }, SECRET, { expiresIn: "7d" }); // 7 days validity
+    const examLink = `https://aiinterview.deepvox.ai/?token=${token}`;
+
+    // Get students from database to verify they exist
+    const dbStudents = await StudentsWithJobPost.findAll({
+      where: {
+        jobPostId: jobId,
+        email: {
+          [Op.in]: emails.map(e => e.toLowerCase())
+        }
+      }
+    });
+
+    if (dbStudents.length === 0) {
+      return res.status(404).json({ 
+        error: "No students found for this job post with the provided emails" 
+      });
+    }
+
+    // Create student map for easy lookup
+    const studentMap = new Map();
+    dbStudents.forEach(s => {
+      studentMap.set(s.email.toLowerCase(), s.name);
+    });
+
+    // Prepare email data with personalization
+    const emailData = {
+      jobTitle: job.jobTitle,
+      company: job.company,
+      location: job.location,
+      examLink: examLink,
+      messageTemplate: messageTemplate,
+      students: dbStudents.map(s => ({
+        name: s.name,
+        email: s.email
+      }))
+    };
+
+    // Send emails to students
+    await sendStudentExamEmail(emailData);
+
+    console.log(`✅ Exam link sent to ${dbStudents.length} student(s)`);
+
+    res.json({ 
+      message: `Examination link sent successfully to ${dbStudents.length} student(s)`,
+      count: dbStudents.length,
+      sentTo: dbStudents.map(s => ({ name: s.name, email: s.email }))
+    });
+  } catch (err) {
+    console.error("❌ Send student exam link error:", err);
+    res.status(500).json({ 
+      error: "Failed to send examination link", 
+      details: err.message 
+    });
+  }
+};
+
 // get job post with token
 exports.getJobpostbyToken = async (req, res) => {
   const { token } = req.body;
@@ -424,6 +526,13 @@ exports.joinJobPostWithToken = async (req, res) => {
   try {
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
+    
+    console.log('\n🔐 ================================================');
+    console.log('   STUDENT ACCESS ATTEMPT');
+    console.log('   ================================================');
+    console.log('   Job ID:', jobId);
+    console.log('   Token valid: ✅');
+    
     // Fetch job with interview questions and answer points
     const job = await JobPost.findByPk(jobId, {
       include: [
@@ -436,9 +545,13 @@ exports.joinJobPostWithToken = async (req, res) => {
         },
       ],
     });
+    
     if (!job) {
+      console.log('   ❌ Job not found');
+      console.log('   ================================================\n');
       return res.status(404).json({ error: "Job post not found" });
     }
+    
     const {
       email,
       name,
@@ -449,39 +562,69 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills,
     } = req.body;
-    let findCandidate = await StudentsWithJobPost.findOne({
-      where: { email: email, jobPostId: jobId },
+
+    console.log('   Email provided:', email);
+    console.log('   Name provided:', name);
+    console.log('   Checking authorization...');
+
+    // Check if student is in the allowed list
+    const allowedStudent = await StudentsWithJobPost.findOne({
+      where: { 
+        email: email ? email.toLowerCase() : '', 
+        jobPostId: jobId 
+      },
     });
-    if (findCandidate) {
-      return res.status(404).json({ error: "Candidate already exists." });
+
+    // If student not in list, reject access
+    if (!allowedStudent) {
+      console.log('   ❌ ACCESS DENIED: Student not in allowed list');
+      console.log('   Email searched:', email ? email.toLowerCase() : 'none');
+      console.log('   Job ID:', jobId);
+      console.log('   ================================================\n');
+      
+      return res.status(403).json({ 
+        error: "Access denied. You are not authorized to take this examination. Please contact HR if you believe this is an error." 
+      });
     }
+
+    console.log('   ✅ Student found in allowed list');
+    console.log('   Student ID:', allowedStudent.id);
+    console.log('   Student name:', allowedStudent.name);
+    console.log('   Current status:', allowedStudent.status);
+
+    // Check if student already completed interview
+    if (allowedStudent.status === 'completed') {
+      console.log('   ❌ ACCESS DENIED: Interview already completed');
+      console.log('   ================================================\n');
+      
+      return res.status(400).json({ 
+        error: "You have already completed this interview." 
+      });
+    }
+
+    console.log('   ✅ ACCESS GRANTED');
+    console.log('   Updating student record...');
+
+    // Update existing student record instead of creating new
+    await allowedStudent.update({
+      resumeUrl: resumeUrl || allowedStudent.resumeUrl,
+      mobile: mobile || allowedStudent.mobile,
+      experienceLevel: experienceLevel || allowedStudent.experienceLevel,
+      designation: designation || allowedStudent.designation,
+      location: location || allowedStudent.location,
+      skills: skills && skills.length > 0 ? skills : allowedStudent.skills,
+      status: 'inprogress'
+    }, { transaction: t });
 
     await job.increment("applicants", { by: 1 });
     await job.reload();
-    const studentData = {
-      email,
-      name,
-      resumeUrl,
-      mobile,
-      experienceLevel,
-      designation,
-      location,
-      skills: skills?.length > 0 ? skills : [],
-    };
-    let candidateId = "";
-    const studentsWithJobPostdata = await StudentsWithJobPost.create(
-      {
-        ...studentData,
-        appliedDate: new Date(),
-        status: "inprogress",
-        jobPostId: jobId,
-      },
-      {
-        transaction: t,
-      }
-    );
+
     await t.commit();
-    candidateId = studentsWithJobPostdata?.id;
+
+    console.log('   ✅ Student record updated successfully');
+    console.log('   Returning interview questions...');
+    console.log('   ================================================\n');
+
     // Transform questions for frontend
     const questions =
       job.interviewQuestions?.map((q) => ({
@@ -503,11 +646,13 @@ exports.joinJobPostWithToken = async (req, res) => {
       jobTitle: job.jobTitle,
       activeJoinUserCount: job.activeJoinUserCount,
       questions,
-      candidateId: candidateId,
+      candidateId: allowedStudent.id,
     });
   } catch (err) {
     await t.rollback();
-    console.log("err", err);
+    console.log('❌ ERROR in joinJobPostWithToken:', err.message);
+    console.log('   ================================================\n');
+    
     res
       .status(400)
       .json({ error: "Invalid or expired token", details: err.message });
@@ -527,7 +672,7 @@ exports.generateTokenForJobInterviewLink = async (req, res) => {
       return res.status(404).json({ error: "Job post not found" });
     }
     // Generate token
-    const token = jwt.sign({ jobId }, SECRET, { expiresIn: "2d" });
+    const token = jwt.sign({ jobId }, SECRET, { expiresIn: "7d" });
     res.json({ token, token, message: "Token generated successfully" });
   } catch (err) {
     console.log("err", err);
