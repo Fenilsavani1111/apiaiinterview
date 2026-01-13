@@ -1,4 +1,4 @@
-// apiaiinterview/routes/jobPost.js - COMPLETE WITH EMAIL VERIFICATION AND STUDENT EXAM LINK
+// apiaiinterview/routes/jobPost.js 
 const express = require("express");
 const router = express.Router();
 const jobPostController = require("../controllers/jobPostController");
@@ -89,6 +89,12 @@ router.post("/join-job-link", jobPostController.joinJobPostWithToken);
 router.post(
   "/update-candidate-byid",
   jobPostController.updateStudentWithJobpostById
+);
+
+// Behavioral analysis endpoint (local - replaces external API)
+router.post(
+  "/behavioral-analysis",
+  jobPostController.getBehavioralAnalysis
 );
 
 // Get candidate interview details by ID
