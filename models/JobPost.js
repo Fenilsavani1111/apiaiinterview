@@ -21,6 +21,9 @@ module.exports = (sequelize) => {
     interviews: { type: DataTypes.INTEGER, defaultValue: 0 },
     activeJoinUser: { type: DataTypes.STRING },
     activeJoinUserCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+    // When true, candidates can record both video and audio for this job's interview.
+    // When false (default), interviews are audio-only for candidates.
+    enableVideoRecording: { type: DataTypes.BOOLEAN, defaultValue: false },
   });
   return JobPost;
 };

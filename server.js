@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const sequelize = require('./config/db');
+const { DataTypes } = require('sequelize');
 
 // ============================================
 // REGISTER MODELS
@@ -44,6 +45,25 @@ app.use('/api', studentRoutes); // ✅ Student routes at /api/students
 // ============================================
 (async () => {
   try {
+    // Ensure new columns exist without disturbing existing data
+    const qi = sequelize.getQueryInterface();
+    try {
+      await qi.addColumn('JobPost', 'enableVideoRecording', {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      });
+      console.log('✅ Added column JobPost.enableVideoRecording');
+    } catch (err) {
+      // Ignore "already exists" errors to keep startup idempotent
+      if (!/exists|Duplicate|already/i.test(err.message || '')) {
+        console.error(
+          '⚠️ Failed to add enableVideoRecording column:',
+          err.message
+        );
+      }
+    }
+
     // Safe sync - won't alter existing tables
     await sequelize.sync();
     console.log('✅ Database synced successfully');

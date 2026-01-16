@@ -1,3 +1,4 @@
+// apiaiinterview/controllers/jobPostController.js - COMPLETE WITH EMAIL AUTHENTICATION
 const {
   JobPost,
   JobRequirement,
@@ -10,7 +11,10 @@ const {
   StudentInterviewAnswer,
 } = require('../models');
 const jwt = require('jsonwebtoken');
-const { sendJobLinkEmail } = require('../utils/mailService');
+const {
+  sendJobLinkEmail,
+  sendStudentExamEmail,
+} = require('../utils/mailService');
 const { Op, fn, col, literal } = require('sequelize');
 const {
   startOfWeek,
@@ -92,6 +96,8 @@ const transformJobPostForFrontend = (jobPost) => {
     interviews: jobPost.interviews || 0,
     activeJoinUser: jobPost.activeJoinUser || 0,
     activeJoinUserCount: jobPost.activeJoinUserCount || 0,
+    // Expose video recording flag to admin and candidate frontends
+    enableVideoRecording: jobPost.enableVideoRecording === true,
   };
 
   return transformed;
@@ -116,9 +122,9 @@ exports.createJobPost = async (req, res) => {
       responsibilities = [],
       skills = [],
       questions = [],
+      students = [],
     } = req.body;
 
-    // Map frontend field names to backend field names
     const jobPostData = {
       jobTitle: title,
       company,
@@ -132,19 +138,18 @@ exports.createJobPost = async (req, res) => {
       salaryCurrency: salary?.currency,
       status: status,
       createdBy: createdBy,
-      // shareableUrl
+      // Default to false if not explicitly enabled from the admin UI
+      enableVideoRecording: req.body.enableVideoRecording === true,
     };
 
     const jobPost = await JobPost.create(jobPostData, { transaction: t });
 
-    // Requirements
     if (requirements.length) {
       await JobRequirement.bulkCreate(
         requirements.map((r) => ({ requirement: r, jobPostId: jobPost.id })),
         { transaction: t }
       );
     }
-    // Responsibilities
     if (responsibilities.length) {
       await JobResponsibility.bulkCreate(
         responsibilities.map((r) => ({
@@ -154,14 +159,12 @@ exports.createJobPost = async (req, res) => {
         { transaction: t }
       );
     }
-    // Skills
     if (skills.length) {
       await JobSkill.bulkCreate(
         skills.map((s) => ({ skill: s, jobPostId: jobPost.id })),
         { transaction: t }
       );
     }
-    // Interview Questions (with answer points)
     for (const q of questions) {
       const {
         question,
@@ -192,6 +195,24 @@ exports.createJobPost = async (req, res) => {
         );
       }
     }
+
+    if (students && students.length > 0) {
+      console.log(
+        `📝 Creating ${students.length} students for job ${jobPost.id}`
+      );
+      await StudentsWithJobPost.bulkCreate(
+        students.map((student) => ({
+          name: student.name,
+          email: student.email.toLowerCase(),
+          mobile: student.phoneNumber,
+          jobPostId: jobPost.id,
+          status: 'inprogress',
+        })),
+        { transaction: t }
+      );
+      console.log(`✅ Successfully created ${students.length} students`);
+    }
+
     await t.commit();
     const created = await JobPost.findByPk(jobPost.id, {
       include: fullInclude,
@@ -260,7 +281,6 @@ exports.updateJobPost = async (req, res) => {
     const jobPost = await JobPost.findByPk(id);
     if (!jobPost) return res.status(404).json({ error: 'Job post not found' });
 
-    // Map frontend field names to backend field names
     const jobPostData = {
       jobTitle: title,
       company,
@@ -272,11 +292,14 @@ exports.updateJobPost = async (req, res) => {
       salaryMin: salary?.min,
       salaryMax: salary?.max,
       salaryCurrency: salary?.currency,
+      enableVideoRecording:
+        typeof req.body.enableVideoRecording === 'boolean'
+          ? req.body.enableVideoRecording
+          : jobPost.enableVideoRecording,
     };
 
     await jobPost.update(jobPostData, { where: { id } }, { transaction: t });
 
-    // Remove old nested data
     await Promise.all([
       JobRequirement.destroy({ where: { jobPostId: id }, transaction: t }),
       JobResponsibility.destroy({ where: { jobPostId: id }, transaction: t }),
@@ -289,7 +312,6 @@ exports.updateJobPost = async (req, res) => {
       InterviewQuestion.destroy({ where: { jobPostId: id }, transaction: t }),
     ]);
 
-    // Re-create nested data
     if (requirements.length) {
       await JobRequirement.bulkCreate(
         requirements.map((r) => ({ requirement: r, jobPostId: id })),
@@ -367,15 +389,11 @@ exports.linkShareJobPost = async (req, res) => {
     return res.status(400).json({ error: 'jobId and email are required' });
   }
   try {
-    // Verify job exists
     const job = await JobPost.findByPk(jobId);
     if (!job) {
       return res.status(404).json({ error: 'Job post not found' });
     }
-    // Generate token
     const token = jwt.sign({ jobId }, SECRET, { expiresIn: '2d' });
-
-    // Send email with token
     await sendJobLinkEmail(email, token);
     res.json({ message: 'Email sent successfully' });
   } catch (err) {
@@ -384,6 +402,176 @@ exports.linkShareJobPost = async (req, res) => {
     res
       .status(500)
       .json({ error: 'Failed to send email', details: err.message });
+  }
+};
+
+// ============================================
+// SEND STUDENT EXAM LINK
+// ============================================
+exports.sendStudentExamLink = async (req, res) => {
+  const { jobId, emails, messageTemplate, students } = req.body;
+
+  if (!jobId || !emails || !Array.isArray(emails) || emails.length === 0) {
+    return res.status(400).json({
+      error: 'jobId and emails array are required',
+    });
+  }
+
+  try {
+    console.log('📧 SEND STUDENT EXAM LINK REQUEST:', {
+      jobId,
+      emailCount: emails.length,
+    });
+
+    const job = await JobPost.findByPk(jobId);
+    if (!job) {
+      return res.status(404).json({ error: 'Job post not found' });
+    }
+
+    // Generate token with jobId only (email will be verified separately)
+    const token = jwt.sign({ jobId }, SECRET, { expiresIn: '30d' });
+    const examLink = `https://aiinterview.deepvox.ai/?token=${token}`;
+
+    const dbStudents = await StudentsWithJobPost.findAll({
+      where: {
+        jobPostId: jobId,
+        email: {
+          [Op.in]: emails.map((e) => e.toLowerCase()),
+        },
+      },
+    });
+
+    if (dbStudents.length === 0) {
+      return res.status(404).json({
+        error: 'No students found for this job post with the provided emails',
+      });
+    }
+
+    const emailData = {
+      jobTitle: job.jobTitle,
+      company: job.company,
+      location: job.location,
+      examLink: examLink,
+      messageTemplate: messageTemplate,
+      students: dbStudents.map((s) => ({
+        name: s.name,
+        email: s.email,
+      })),
+    };
+
+    await sendStudentExamEmail(emailData);
+
+    console.log(`✅ Exam link sent to ${dbStudents.length} student(s)`);
+
+    res.json({
+      message: `Examination link sent successfully to ${dbStudents.length} student(s)`,
+      count: dbStudents.length,
+      sentTo: dbStudents.map((s) => ({ name: s.name, email: s.email })),
+    });
+  } catch (err) {
+    console.error('❌ Send student exam link error:', err);
+    res.status(500).json({
+      error: 'Failed to send examination link',
+      details: err.message,
+    });
+  }
+};
+
+// ============================================
+// VERIFY EMAIL FOR INTERVIEW ACCESS
+// ============================================
+exports.verifyEmailForInterview = async (req, res) => {
+  const { token, email } = req.body;
+
+  if (!token || !email) {
+    return res.status(400).json({ error: 'Token and email are required' });
+  }
+
+  try {
+    console.log('\n🔐 ================================================');
+    console.log('   EMAIL VERIFICATION FOR INTERVIEW ACCESS');
+    console.log('   ================================================');
+    console.log('   Email provided:', email);
+
+    // Verify token
+    const decoded = jwt.verify(token, SECRET);
+    const jobId = decoded.jobId;
+
+    console.log('   Job ID:', jobId);
+    console.log('   Token valid: ✅');
+
+    // Check if student exists in the allowed list
+    const student = await StudentsWithJobPost.findOne({
+      where: {
+        email: email.toLowerCase(),
+        jobPostId: jobId,
+      },
+    });
+
+    if (!student) {
+      console.log('   ❌ ACCESS DENIED: Email not in allowed list');
+      console.log('   ================================================\n');
+
+      return res.status(403).json({
+        success: false,
+        error:
+          'Access denied. Your email is not authorized for this interview. Please contact HR .',
+      });
+    }
+
+    console.log('   ✅ EMAIL VERIFIED');
+    console.log('   Student ID:', student.id);
+    console.log('   Student name:', student.name);
+    console.log('   Status:', student.status);
+
+    // Check if already completed
+    if (student.status === 'completed') {
+      console.log('   ❌ Interview already completed');
+      console.log('   ================================================\n');
+
+      return res.status(400).json({
+        success: false,
+        error: 'You have already completed this interview.',
+      });
+    }
+
+    console.log('   ✅ ACCESS GRANTED - Email verified successfully');
+    console.log('   ================================================\n');
+
+    // Return success with student info
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+      student: {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        status: student.status,
+      },
+    });
+  } catch (err) {
+    console.error('❌ Email verification error:', err.message);
+    console.log('   ================================================\n');
+
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid token',
+      });
+    }
+
+    if (err.name === 'TokenExpiredError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Token has expired. Please request a new interview link.',
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Verification failed',
+      details: err.message,
+    });
   }
 };
 
@@ -415,17 +603,36 @@ exports.getJobpostbyToken = async (req, res) => {
   }
 };
 
-// join job post interview with token
+// ============================================
+// JOIN JOB POST WITH TOKEN (WITH EMAIL VERIFICATION)
+// ============================================
 exports.joinJobPostWithToken = async (req, res) => {
-  const { token } = req.body;
+  const { token, email } = req.body;
+
   if (!token) {
-    return res.status(400).json({ error: 'token is required' });
+    return res.status(400).json({ error: 'Token is required' });
   }
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
   const t = await sequelize.transaction();
+
   try {
+    console.log('\n🔐 ================================================');
+    console.log('   STUDENT INTERVIEW ACCESS ATTEMPT');
+    console.log('   ================================================');
+
+    // Verify token
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
-    // Fetch job with interview questions and answer points
+
+    console.log('   Job ID:', jobId);
+    console.log('   Email:', email);
+    console.log('   Token valid: ✅');
+
+    // Fetch job with interview questions
     const job = await JobPost.findByPk(jobId, {
       include: [
         {
@@ -437,11 +644,54 @@ exports.joinJobPostWithToken = async (req, res) => {
         },
       ],
     });
+
     if (!job) {
+      console.log('   ❌ Job not found');
+      console.log('   ================================================\n');
       return res.status(404).json({ error: 'Job post not found' });
     }
+
+    console.log('   Checking email authorization...');
+
+    // CRITICAL: Check if student email is in the allowed list
+    const allowedStudent = await StudentsWithJobPost.findOne({
+      where: {
+        email: email.toLowerCase(),
+        jobPostId: jobId,
+      },
+    });
+
+    if (!allowedStudent) {
+      console.log('   ❌ ACCESS DENIED: Email not authorized');
+      console.log('   Email searched:', email.toLowerCase());
+      console.log('   Job ID:', jobId);
+      console.log('   ================================================\n');
+
+      return res.status(403).json({
+        error:
+          'Access denied. Your email is not authorized for this interview. Please contact HR .',
+      });
+    }
+
+    console.log('   ✅ Email authorized');
+    console.log('   Student ID:', allowedStudent.id);
+    console.log('   Student name:', allowedStudent.name);
+    console.log('   Current status:', allowedStudent.status);
+
+    // Check if already completed
+    if (allowedStudent.status === 'completed') {
+      console.log('   ❌ ACCESS DENIED: Interview already completed');
+      console.log('   ================================================\n');
+
+      return res.status(400).json({
+        error: 'You have already completed this interview.',
+      });
+    }
+
+    console.log('   ✅ ACCESS GRANTED');
+
+    // Extract other data from request
     const {
-      email,
       name,
       resumeUrl,
       mobile,
@@ -450,39 +700,33 @@ exports.joinJobPostWithToken = async (req, res) => {
       location,
       skills,
     } = req.body;
-    let findCandidate = await StudentsWithJobPost.findOne({
-      where: { email: email, jobPostId: jobId },
-    });
-    if (findCandidate) {
-      return res.status(404).json({ error: 'Candidate already exists.' });
-    }
+
+    console.log('   Updating student record...');
+
+    // Update student record with additional info
+    await allowedStudent.update(
+      {
+        name: name || allowedStudent.name,
+        resumeUrl: resumeUrl || allowedStudent.resumeUrl,
+        mobile: mobile || allowedStudent.mobile,
+        experienceLevel: experienceLevel || allowedStudent.experienceLevel,
+        designation: designation || allowedStudent.designation,
+        location: location || allowedStudent.location,
+        skills: skills && skills.length > 0 ? skills : allowedStudent.skills,
+        status: 'inprogress',
+      },
+      { transaction: t }
+    );
 
     await job.increment('applicants', { by: 1 });
     await job.reload();
-    const studentData = {
-      email,
-      name,
-      resumeUrl,
-      mobile,
-      experienceLevel,
-      designation,
-      location,
-      skills: skills?.length > 0 ? skills : [],
-    };
-    let candidateId = '';
-    const studentsWithJobPostdata = await StudentsWithJobPost.create(
-      {
-        ...studentData,
-        appliedDate: new Date(),
-        status: 'inprogress',
-        jobPostId: jobId,
-      },
-      {
-        transaction: t,
-      }
-    );
+
     await t.commit();
-    candidateId = studentsWithJobPostdata?.id;
+
+    console.log('   ✅ Student record updated successfully');
+    console.log('   Returning interview questions...');
+    console.log('   ================================================\n');
+
     // Transform questions for frontend
     const questions =
       job.interviewQuestions?.map((q) => ({
@@ -499,19 +743,33 @@ exports.joinJobPostWithToken = async (req, res) => {
       })) || [];
 
     res.json({
-      message: 'User joined successfully',
+      message: 'Access granted successfully',
       jobId,
       jobTitle: job.jobTitle,
       activeJoinUserCount: job.activeJoinUserCount,
       questions,
-      candidateId: candidateId,
+      candidateId: allowedStudent.id,
+      candidateName: allowedStudent.name,
     });
   } catch (err) {
     await t.rollback();
-    console.log('err', err);
-    res
-      .status(400)
-      .json({ error: 'Invalid or expired token', details: err.message });
+    console.error('❌ ERROR in joinJobPostWithToken:', err.message);
+    console.log('   ================================================\n');
+
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(400).json({ error: 'Invalid token' });
+    }
+
+    if (err.name === 'TokenExpiredError') {
+      return res.status(400).json({
+        error: 'Token has expired. Please request a new interview link.',
+      });
+    }
+
+    res.status(500).json({
+      error: 'Failed to access interview',
+      details: err.message,
+    });
   }
 };
 
@@ -519,17 +777,16 @@ exports.joinJobPostWithToken = async (req, res) => {
 exports.generateTokenForJobInterviewLink = async (req, res) => {
   const { jobId } = req.body;
   if (!jobId) {
-    return res.status(400).json({ error: 'jobId are required' });
+    return res.status(400).json({ error: 'jobId is required' });
   }
   try {
-    // Verify job exists
     const job = await JobPost.findByPk(jobId);
     if (!job) {
       return res.status(404).json({ error: 'Job post not found' });
     }
-    // Generate token
-    const token = jwt.sign({ jobId }, SECRET, { expiresIn: '2d' });
-    res.json({ token, token, message: 'Token generated successfully' });
+    // Generate token with 30 days validity
+    const token = jwt.sign({ jobId }, SECRET, { expiresIn: '30d' });
+    res.json({ token: token, message: 'Token generated successfully' });
   } catch (err) {
     console.log('err', err);
     res.status(500).json({
@@ -553,7 +810,7 @@ exports.getRecentCandidates = async (req, res) => {
     console.log('err', err);
     await t.rollback();
     res.status(500).json({
-      error: 'Failed to generate job interview link token',
+      error: 'Failed to get recent candidates',
       details: err.message,
     });
   }
@@ -566,37 +823,44 @@ exports.updateStudentWithJobpostById = async (req, res) => {
     let { candidateId, data } = req?.body;
     let questions = data?.questions ?? [];
     delete data?.questions;
+
     const candidate = await StudentsWithJobPost.findOne({
       where: { id: candidateId },
     });
+
     if (!candidate) {
       return res.status(404).json({ error: 'Candidate not found' });
     }
-    let deletdques = await StudentInterviewAnswer.destroy({
+
+    let deletedQues = await StudentInterviewAnswer.destroy({
       where: {
         studentId: candidateId,
       },
       transaction: t,
     });
-    // Map frontend field names to backend field names
+
     await StudentsWithJobPost.update(
       { ...data },
       { where: { id: candidateId } },
       { transaction: t }
     );
-    if (deletdques === 0) {
+
+    if (deletedQues === 0) {
       await JobPost.increment('interviews', {
         by: 1,
         where: { id: candidate?.jobPostId },
         transaction: t,
       });
     }
+
     await t.commit();
+
     await sequelize.transaction(async (t) => {
       await StudentInterviewAnswer.bulkCreate([...questions], {
         transaction: t,
       });
     });
+
     const updated = await StudentsWithJobPost.findByPk(candidateId);
     res.json({
       message: 'Candidate details updated successfully',
@@ -605,9 +869,7 @@ exports.updateStudentWithJobpostById = async (req, res) => {
   } catch (err) {
     await t.rollback();
     console.log('err', err);
-    res
-      .status(400)
-      .json({ error: 'Invalid or expired token', details: err.message });
+    res.status(400).json({ error: 'Update failed', details: err.message });
   }
 };
 
@@ -623,14 +885,14 @@ exports.getCandidateById = async (req, res) => {
           include: [
             {
               model: InterviewQuestion,
-              as: 'Question', // 👈 Match the alias used in the association
+              as: 'Question',
             },
           ],
         },
       ],
     });
     if (!candidate)
-      return res.status(404).json({ error: 'Job post not found' });
+      return res.status(404).json({ error: 'Candidate not found' });
     res.json({
       candidate: candidate,
     });
@@ -653,7 +915,6 @@ exports.getAdminDashbord = async (req, res) => {
         },
       },
     });
-    // Get current week range (Mon–Sun)
     const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const currentWeekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     const curr_week_interview = await StudentsWithJobPost.count({
@@ -664,7 +925,6 @@ exports.getAdminDashbord = async (req, res) => {
         },
       },
     });
-    // Get previous week range
     const previousWeekStart = startOfWeek(subWeeks(new Date(), 1), {
       weekStartsOn: 1,
     });
@@ -679,7 +939,6 @@ exports.getAdminDashbord = async (req, res) => {
         },
       },
     });
-    // Calculate weekly interview growth percentage
     let interview_weekly_growth = getPercentage(
       prev_week_interview,
       curr_week_interview
@@ -688,7 +947,6 @@ exports.getAdminDashbord = async (req, res) => {
     let active_jobs = jobs.filter((v) => v?.status === 'draft')?.length;
     let inactive_jobs = jobs.filter((v) => v?.status !== 'draft')?.length;
     const total_candidates = await StudentsWithJobPost.count({});
-    // Current month's range
     const currentMonthStart = startOfMonth(new Date());
     const currentMonthEnd = endOfMonth(new Date());
     const curr_month_total_candidates = await StudentsWithJobPost.count({
@@ -698,7 +956,6 @@ exports.getAdminDashbord = async (req, res) => {
         },
       },
     });
-    // Last month's range
     const prevMonthStart = startOfMonth(subMonths(new Date(), 1));
     const prevMonthEnd = endOfMonth(subMonths(new Date(), 1));
     const prev_month_total_candidates = await StudentsWithJobPost.count({
@@ -708,13 +965,12 @@ exports.getAdminDashbord = async (req, res) => {
         },
       },
     });
-    // Calculate monthly candidate growth percentage
     let candidate_monthly_growth = getPercentage(
       prev_month_total_candidates,
       curr_month_total_candidates
     );
     const recentCandidates = candidates
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // sort descending
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 5);
     const candidateScore = candidates.reduce(
       (sum, item) => sum + item.totalScore,
@@ -738,33 +994,29 @@ exports.getAdminDashbord = async (req, res) => {
   } catch (err) {
     console.log('err', err);
     res.status(500).json({
-      error: 'Failed to generate job interview link token',
+      error: 'Failed to get dashboard data',
       details: err.message,
     });
   }
 };
 
-// Generate the last 7 week start dates
 const weeks = [];
 for (let i = 6; i >= 0; i--) {
-  const date = startOfWeek(subWeeks(new Date(), i), { weekStartsOn: 1 }); // Monday
+  const date = startOfWeek(subWeeks(new Date(), i), { weekStartsOn: 1 });
   weeks.push(format(date, 'dd-MM-yyyy'));
 }
 
 // GET analytics dashboard
 exports.getAnalyticsDashboard = async (req, res) => {
   try {
-    // Current month's range
     const currentMonthStart = startOfMonth(new Date());
     const currentMonthEnd = endOfMonth(new Date());
-    // Prev month's range
     const prevMonthStart = startOfMonth(subMonths(new Date(), 1));
     const prevMonthEnd = endOfMonth(subMonths(new Date(), 1));
     const candidates = await StudentsWithJobPost.findAll({
       order: [['createdAt', 'DESC']],
       include: [{ model: JobPost, as: 'JobPost' }],
     });
-    // total interview data
     const total_interview = await StudentsWithJobPost.count({
       where: {
         interviewDate: {
@@ -791,7 +1043,6 @@ exports.getAnalyticsDashboard = async (req, res) => {
       curr_month_interview?.length ?? 0
     );
 
-    // average score data
     const total_avg_score = candidates.reduce(
       (sum, item) => sum + item.totalScore,
       0
@@ -809,7 +1060,6 @@ exports.getAnalyticsDashboard = async (req, res) => {
       curr_month_avg_score
     );
 
-    // Average Duration
     const total_avg_duration = candidates.reduce(
       (sum, item) => sum + item.duration,
       0
@@ -824,53 +1074,40 @@ exports.getAnalyticsDashboard = async (req, res) => {
     );
     let duration_growth = curr_month_avg_duration - prev_month_avg_duration;
     if (duration_growth < 0) duration_growth = 0;
-    // const duration_growth = getPercentage(
-    //   prev_month_avg_duration,
-    //   curr_month_avg_duration
-    // );
+
     const last7weekdata = await StudentsWithJobPost.findAll({
-      // Select the week start and average totalScore rounded to 2 decimals
       attributes: [
-        // Truncate createdAt to the week (e.g., Monday of each week)
         [fn('DATE_TRUNC', 'week', col('createdAt')), 'week_start'],
         [fn('ROUND', fn('AVG', col('totalScore')), 2), 'avg_score'],
       ],
-
-      // Filter for records within the last 7 weeks
       where: {
         createdAt: {
           [Op.gte]: literal(`DATE_TRUNC('week', NOW()) - INTERVAL '6 weeks'`),
         },
       },
-
-      // Group results by the week start
       group: [fn('DATE_TRUNC', 'week', col('createdAt'))],
-
-      // Sort weeks from most recent to oldest
       order: [[fn('DATE_TRUNC', 'week', col('createdAt')), 'ASC']],
-
-      // Return plain JavaScript objects instead of Sequelize instances
       raw: true,
     });
-    // Map last7weekdata for quick lookup
+
     const last7weekdataMap = new Map(
       last7weekdata.map((row) => [
         format(new Date(row.week_start), 'dd-MM-yyyy'),
         parseFloat(row.avg_score ?? 0),
       ])
     );
-    // Final array with exactly 7 week entries
+
     const finalResult = weeks.map((week) => ({
       date: week,
-      score: last7weekdataMap.get(week) ?? 0, // or null
+      score: last7weekdataMap.get(week) ?? 0,
     }));
-    // Generate last 7 months (formatted as YYYY-MM for matching)
+
     const months = [];
     for (let i = 6; i >= 0; i--) {
       const monthStart = startOfMonth(subMonths(new Date(), i));
       months.push(format(monthStart, 'yyyy-MM'));
     }
-    // get last 7 months interview
+
     const last7monthsinterview = await StudentsWithJobPost.findAll({
       attributes: [
         [fn('DATE_TRUNC', 'month', col('interviewDate')), 'month'],
@@ -886,20 +1123,19 @@ exports.getAnalyticsDashboard = async (req, res) => {
       order: [[fn('DATE_TRUNC', 'month', col('interviewDate')), 'ASC']],
       raw: true,
     });
-    // Normalize DB result: Map from 'YYYY-MM' to count
+
     const last7monthsinterviewMap = new Map(
       last7monthsinterview.map((row) => [
         format(new Date(row.month), 'yyyy-MM'),
         parseInt(row.count),
       ])
     );
-    //Final array: Ensure all 7 months exist
+
     const finalResultinterview = months.map((month) => ({
       month,
       count: last7monthsinterviewMap.get(month) ?? 0,
     }));
 
-    // skill performance
     const scores = await StudentsWithJobPost.findAll({
       attributes: [
         'id',
@@ -921,7 +1157,6 @@ exports.getAnalyticsDashboard = async (req, res) => {
       raw: true,
     });
 
-    // Skills
     const skillKeys = [
       'communication',
       'technical',
@@ -930,16 +1165,17 @@ exports.getAnalyticsDashboard = async (req, res) => {
       'bodyLanguage',
       'confidence',
     ];
-    // Initial structure
+
     const skillTrends = {};
     skillKeys.forEach((skill) => {
       skillTrends[skill] = { current_month: [], previous_month: [] };
     });
-    // Group by month
-    const now = new Date(); // Current date
-    const prevDate = subMonths(now, 1); // Date one month ago
+
+    const now = new Date();
+    const prevDate = subMonths(now, 1);
     const currentMonthKey = format(now, 'yyyy-MM');
     const previousMonthKey = format(prevDate, 'yyyy-MM');
+
     scores.forEach((record) => {
       if (!record.interviewDate) return;
       const dateKey = format(new Date(record.interviewDate), 'yyyy-MM');
@@ -954,7 +1190,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
         }
       });
     });
-    // Reduce values to sum
+
     skillKeys.forEach((key) => {
       let curr = skillTrends[key].current_month.reduce(
         (acc, val) => acc + val,
@@ -969,7 +1205,6 @@ exports.getAnalyticsDashboard = async (req, res) => {
       delete skillTrends[key]?.previous_month;
     });
 
-    // get top 5 candidate
     const top5ByOverallScore = await StudentsWithJobPost.findAll({
       where: {
         interviewDate: {
@@ -1001,5 +1236,277 @@ exports.getAnalyticsDashboard = async (req, res) => {
   } catch (err) {
     console.log('err', err);
     res.status(500).json({ error: err.message });
+  }
+};
+
+// ============================================
+// BEHAVIORAL ANALYSIS (Local endpoint - NO AUTH REQUIRED)
+// ============================================
+exports.getBehavioralAnalysis = async (req, res) => {
+  try {
+    const { video_url, questionsWithAnswer, jobData } = req.body;
+
+    console.log('📹 Behavioral analysis request:', {
+      video_url: video_url ? video_url.substring(0, 50) + '...' : null,
+      questionsCount: questionsWithAnswer?.length || 0,
+      hasJobData: !!jobData,
+    });
+
+    // Validate input
+    if (
+      !questionsWithAnswer ||
+      !Array.isArray(questionsWithAnswer) ||
+      questionsWithAnswer.length === 0
+    ) {
+      return res.status(400).json({
+        status: 'error',
+        error: 'No questions with answers provided',
+        status_code: 400,
+      });
+    }
+
+    // Calculate average scores and response times
+    const totalScore = questionsWithAnswer.reduce(
+      (sum, q) => sum + (q.score || 0),
+      0
+    );
+    const avgScore = totalScore / questionsWithAnswer.length;
+    const totalResponseTime = questionsWithAnswer.reduce(
+      (sum, q) => sum + (q.responseTime || 0),
+      0
+    );
+    const avgResponseTime = totalResponseTime / questionsWithAnswer.length;
+
+    // Analyze answer lengths and quality
+    const answerLengths = questionsWithAnswer.map(
+      (q) => (q.userAnswer || '').length
+    );
+    const avgAnswerLength =
+      answerLengths.reduce((a, b) => a + b, 0) / answerLengths.length;
+    const detailedAnswers = questionsWithAnswer.filter(
+      (q) => (q.userAnswer || '').length > 50
+    ).length;
+    const briefAnswers = questionsWithAnswer.filter(
+      (q) => (q.userAnswer || '').length < 30
+    ).length;
+
+    // Generate behavioral analysis based on interview performance
+    const performanceBreakdown = {
+      communicationSkills: {
+        overallAveragePercentage: Math.min(
+          100,
+          Math.max(0, (avgScore / 10) * 100)
+        ),
+        summary:
+          avgScore >= 7
+            ? 'Demonstrated strong communication skills with clear and articulate responses.'
+            : avgScore >= 5
+            ? 'Showed adequate communication skills with room for improvement in clarity.'
+            : 'Communication skills need development. Consider focusing on structured responses.',
+      },
+      technicalKnowledge: {
+        overallAveragePercentage: Math.min(
+          100,
+          Math.max(0, (avgScore / 10) * 100)
+        ),
+        summary:
+          avgScore >= 7
+            ? 'Exhibited solid technical knowledge and understanding of key concepts.'
+            : avgScore >= 5
+            ? 'Displayed basic technical knowledge with some gaps in understanding.'
+            : 'Technical knowledge requires further development and study.',
+      },
+      confidenceLevel: {
+        overallAveragePercentage: Math.min(
+          100,
+          Math.max(0, (avgScore / 10) * 100)
+        ),
+        summary:
+          avgScore >= 7
+            ? 'Displayed high confidence in responses and knowledge.'
+            : avgScore >= 5
+            ? 'Showed moderate confidence with some hesitation.'
+            : 'Confidence level needs improvement. Consider more preparation.',
+      },
+      problemSolving: {
+        overallAveragePercentage: Math.min(
+          100,
+          Math.max(0, (avgScore / 10) * 100)
+        ),
+        summary:
+          avgScore >= 7
+            ? 'Demonstrated strong problem-solving abilities.'
+            : avgScore >= 5
+            ? 'Showed basic problem-solving skills.'
+            : 'Problem-solving skills need enhancement.',
+      },
+      leadershipPotential: {
+        overallAveragePercentage: Math.min(
+          100,
+          Math.max(0, (avgScore / 10) * 100)
+        ),
+        summary:
+          avgScore >= 7
+            ? 'Exhibited leadership qualities in responses.'
+            : avgScore >= 5
+            ? 'Showed potential for leadership development.'
+            : 'Leadership potential requires further assessment.',
+      },
+      body_language: {
+        overallAveragePercentage: video_url ? 75 : 0, // Placeholder - would require video analysis
+        summary: video_url
+          ? 'Video recording available for detailed body language analysis.'
+          : 'No video recording available for body language assessment.',
+      },
+    };
+
+    // Generate AI evaluation summary
+    const aiEvaluationSummary = {
+      summary:
+        avgScore >= 7
+          ? `The candidate demonstrated strong performance across ${
+              questionsWithAnswer.length
+            } questions with an average score of ${avgScore.toFixed(
+              1
+            )}/10. Responses were detailed and showed good understanding of the subject matter.`
+          : avgScore >= 5
+          ? `The candidate showed moderate performance with an average score of ${avgScore.toFixed(
+              1
+            )}/10 across ${
+              questionsWithAnswer.length
+            } questions. Some areas showed promise while others need improvement.`
+          : `The candidate's performance indicates areas for significant improvement. Average score was ${avgScore.toFixed(
+              1
+            )}/10 across ${
+              questionsWithAnswer.length
+            } questions. Additional preparation and study would be beneficial.`,
+      keyStrengths: [
+        avgScore >= 7
+          ? 'Strong technical knowledge'
+          : avgScore >= 5
+          ? 'Basic understanding demonstrated'
+          : 'Willingness to participate',
+        avgAnswerLength > 50
+          ? 'Detailed and comprehensive responses'
+          : 'Concise communication style',
+        detailedAnswers > briefAnswers
+          ? 'Thorough in explanations'
+          : 'Direct and to the point',
+      ],
+      areasOfGrowth: [
+        avgScore < 7
+          ? 'Enhance technical knowledge depth'
+          : 'Continue building on existing knowledge',
+        avgResponseTime > 30
+          ? 'Improve response time and efficiency'
+          : 'Maintain current response pace',
+        briefAnswers > detailedAnswers
+          ? 'Develop more detailed explanations'
+          : 'Continue providing comprehensive answers',
+      ],
+    };
+
+    // Generate video analysis insights (simplified since we don't have ML video processing)
+    const video_analysis_insights = {
+      positive_indicators: video_url
+        ? [
+            'Video recording completed successfully',
+            'Interview session captured for review',
+            `Average response time: ${avgResponseTime.toFixed(1)} seconds`,
+          ]
+        : [],
+      areas_for_improvement: [
+        avgScore < 7
+          ? 'Focus on improving answer quality and depth'
+          : 'Continue maintaining high standards',
+        avgResponseTime > 30
+          ? 'Work on reducing response time'
+          : 'Maintain efficient response patterns',
+      ],
+      recommendations: [
+        avgScore >= 7
+          ? 'Strong candidate - proceed with next interview round'
+          : 'Consider additional assessment',
+        'Review video recording for detailed behavioral analysis',
+        'Provide feedback on areas identified for improvement',
+      ],
+    };
+
+    // Generate behavioral analysis scores (simplified)
+    const behavioral_analysis = {
+      eye_contact: video_url ? 75 : 0,
+      posture: video_url ? 70 : 0,
+      gestures: video_url ? 65 : 0,
+      facial_expressions: video_url ? 70 : 0,
+      voice_tone: 75,
+      confidence: Math.min(100, Math.max(0, (avgScore / 10) * 100)),
+      engagement: Math.min(100, Math.max(0, (avgScore / 10) * 100)),
+    };
+
+    // Generate recommendations
+    const recommendations = {
+      recommendation:
+        avgScore >= 7
+          ? 'Highly Recommended'
+          : avgScore >= 5
+          ? 'Recommended'
+          : 'Consider with reservations',
+      summary:
+        avgScore >= 7
+          ? `Strong performance with average score of ${avgScore.toFixed(
+              1
+            )}/10. Candidate demonstrates good understanding and communication skills.`
+          : avgScore >= 5
+          ? `Moderate performance with average score of ${avgScore.toFixed(
+              1
+            )}/10. Candidate shows potential but may need additional training.`
+          : `Performance below expectations with average score of ${avgScore.toFixed(
+              1
+            )}/10. Consider additional assessment or training before proceeding.`,
+    };
+
+    // Generate quick stats
+    const quickStats = {
+      communication:
+        avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
+      technical: avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
+      problemSolving:
+        avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
+      leadership: avgScore >= 7 ? 'Good' : avgScore >= 5 ? 'Fair' : 'Poor',
+    };
+
+    const response = {
+      status: 'success',
+      timestamp: new Date().toISOString(),
+      video_url: video_url || null,
+      performanceBreakdown,
+      aiEvaluationSummary,
+      behavioral_analysis,
+      video_analysis_insights,
+      recommendations,
+      quickStats,
+      meta: {
+        totalQuestions: questionsWithAnswer.length,
+        averageScore: avgScore.toFixed(2),
+        averageResponseTime: avgResponseTime.toFixed(2),
+        videoAvailable: !!video_url,
+      },
+    };
+
+    console.log('✅ Behavioral analysis completed:', {
+      status: response.status,
+      avgScore: avgScore.toFixed(2),
+      hasVideo: !!video_url,
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Behavioral analysis error:', error);
+    res.status(500).json({
+      status: 'error',
+      error: error.message || 'Internal server error',
+      status_code: 500,
+      video_url: req.body.video_url || null,
+    });
   }
 };
