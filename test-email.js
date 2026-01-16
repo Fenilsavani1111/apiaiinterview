@@ -1,5 +1,3 @@
-// apiaiinterview/test-email.js - EMAIL TESTING & DEBUGGING SCRIPT
-
 const nodemailer = require('nodemailer');
 
 // ============================================
@@ -9,7 +7,7 @@ const EMAIL_CONFIG = {
   service: 'gmail',
   auth: {
     user: 'surbhivasoya11@gmail.com',
-    pass: 'hvey iiqt jqfz krxc',  // Replace with your App Password
+    pass: 'hvey iiqt jqfz krxc', // Replace with your App Password
   },
 };
 
@@ -17,23 +15,13 @@ const EMAIL_CONFIG = {
 // TEST 1: Verify Email Server Connection
 // ============================================
 async function testConnection() {
-  console.log('\n📧 TEST 1: Testing Email Server Connection...\n');
-  
   const transporter = nodemailer.createTransport(EMAIL_CONFIG);
-  
+
   try {
     await transporter.verify();
-    console.log('✅ SUCCESS: Email server connection is working!');
-    console.log('   Gmail SMTP is accessible');
-    console.log('   Credentials are valid\n');
     return true;
   } catch (error) {
-    console.error('❌ FAILED: Cannot connect to email server');
-    console.error('   Error:', error.message);
-    console.error('\n🔧 SOLUTION:');
-    console.error('   1. Go to: https://myaccount.google.com/apppasswords');
-    console.error('   2. Generate new App Password');
-    console.error('   3. Update the password in this file\n');
+    console.error('❌ FAILED: Cannot connect to email server:', error.message);
     return false;
   }
 }
@@ -44,9 +32,9 @@ async function testConnection() {
 async function sendTestEmail(toEmail) {
   console.log('\n📧 TEST 2: Sending Test Email...\n');
   console.log(`   To: ${toEmail}`);
-  
+
   const transporter = nodemailer.createTransport(EMAIL_CONFIG);
-  
+
   const mailOptions = {
     from: '"AI Interview Test" <surbhivasoya11@gmail.com>',
     to: toEmail,
@@ -62,9 +50,9 @@ async function sendTestEmail(toEmail) {
           This is a test email to verify email delivery.
         </p>
       </div>
-    `
+    `,
   };
-  
+
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ SUCCESS: Test email sent!');
@@ -79,10 +67,12 @@ async function sendTestEmail(toEmail) {
     console.error('❌ FAILED: Could not send test email');
     console.error('   Error:', error.message);
     console.error('   Code:', error.code);
-    
+
     if (error.message.includes('535')) {
       console.error('\n🔧 SOLUTION: Invalid credentials');
-      console.error('   Generate new App Password at: https://myaccount.google.com/apppasswords\n');
+      console.error(
+        '   Generate new App Password at: https://myaccount.google.com/apppasswords\n'
+      );
     } else if (error.message.includes('timeout')) {
       console.error('\n🔧 SOLUTION: Network timeout');
       console.error('   Check firewall settings for port 587/465\n');
@@ -98,15 +88,15 @@ async function sendTestEmail(toEmail) {
 // ============================================
 async function sendStudentExamEmail() {
   console.log('\n📧 TEST 3: Sending Student Exam Email (Simulated)...\n');
-  
+
   const transporter = nodemailer.createTransport(EMAIL_CONFIG);
-  
+
   const studentEmail = 'sindhu@deepvox.ai'; // Use actual student email
   const studentName = 'Sindhu';
   const jobTitle = 'Software Engineer';
   const company = 'DeepVox';
   const examLink = 'https://aiinterview.deepvox.ai/?token=test123';
-  
+
   const mailOptions = {
     from: '"AI Interview" <surbhivasoya11@gmail.com>',
     to: studentEmail,
@@ -152,9 +142,9 @@ async function sendStudentExamEmail() {
         </div>
       </body>
       </html>
-    `
+    `,
   };
-  
+
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ SUCCESS: Student exam email sent!');
@@ -162,7 +152,9 @@ async function sendStudentExamEmail() {
     console.log('   To:', studentEmail);
     console.log('\n📬 CHECK STUDENT INBOX:');
     console.log(`   Email: ${studentEmail}`);
-    console.log('   Subject: Interview Invitation - Software Engineer at DeepVox\n');
+    console.log(
+      '   Subject: Interview Invitation - Software Engineer at DeepVox\n'
+    );
     return true;
   } catch (error) {
     console.error('❌ FAILED: Could not send student email');
@@ -176,7 +168,7 @@ async function sendStudentExamEmail() {
 // ============================================
 function checkGmailSettings() {
   console.log('\n📧 TEST 4: Gmail Settings Checklist...\n');
-  
+
   console.log('✓ Required Gmail Settings:');
   console.log('  1. 2-Step Verification: ENABLED');
   console.log('     → https://myaccount.google.com/security');
@@ -184,12 +176,18 @@ function checkGmailSettings() {
   console.log('     → https://myaccount.google.com/apppasswords');
   console.log('  3. Less Secure Apps: NOT NEEDED (use App Password)');
   console.log('  4. IMAP/POP: Enabled (usually default)\n');
-  
+
   console.log('📋 Current Configuration:');
   console.log('  Email:', EMAIL_CONFIG.auth.user);
-  console.log('  Password Length:', EMAIL_CONFIG.auth.pass.length, 'characters');
-  console.log('  Expected Length: 16 characters (without spaces) or 19 (with spaces)\n');
-  
+  console.log(
+    '  Password Length:',
+    EMAIL_CONFIG.auth.pass.length,
+    'characters'
+  );
+  console.log(
+    '  Expected Length: 16 characters (without spaces) or 19 (with spaces)\n'
+  );
+
   if (EMAIL_CONFIG.auth.pass.length < 16) {
     console.log('⚠️  WARNING: Password seems too short!');
     console.log('   App Passwords are 16 characters long\n');
@@ -200,46 +198,31 @@ function checkGmailSettings() {
 // RUN ALL TESTS
 // ============================================
 async function runAllTests() {
-  console.log('\n╔════════════════════════════════════════╗');
-  console.log('║   EMAIL SYSTEM DIAGNOSTIC TESTS       ║');
-  console.log('╚════════════════════════════════════════╝');
-  
   // Test 1: Connection
   const connectionOk = await testConnection();
   if (!connectionOk) {
     console.log('\n❌ STOPPING: Fix connection issues first\n');
     return;
   }
-  
+
   // Test 2: Simple test email (use your own email for testing)
   console.log('Enter recipient email for test (or press Enter to skip):');
   const readline = require('readline').createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
-  
+
   readline.question('Test email address: ', async (email) => {
     if (email && email.includes('@')) {
       await sendTestEmail(email.trim());
     }
-    
+
     // Test 3: Student exam email
     await sendStudentExamEmail();
-    
+
     // Test 4: Settings check
     checkGmailSettings();
-    
-    console.log('\n╔════════════════════════════════════════╗');
-    console.log('║   DIAGNOSTIC COMPLETE                  ║');
-    console.log('╚════════════════════════════════════════╝\n');
-    
-    console.log('📝 NEXT STEPS:');
-    console.log('1. If Test 1 passed: Credentials are correct ✅');
-    console.log('2. If Test 2 passed: Email delivery works ✅');
-    console.log('3. If Test 3 passed: Student emails work ✅');
-    console.log('4. Check SPAM folder if emails not in inbox');
-    console.log('5. Wait 1-2 minutes for email delivery\n');
-    
+
     readline.close();
   });
 }
@@ -255,5 +238,5 @@ module.exports = {
   testConnection,
   sendTestEmail,
   sendStudentExamEmail,
-  checkGmailSettings
+  checkGmailSettings,
 };

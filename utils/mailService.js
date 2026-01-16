@@ -1,4 +1,3 @@
-// apiaiinterview/utils/mailService.js - WITH DETAILED DEBUGGING
 const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const path = require('path');
@@ -7,7 +6,7 @@ const path = require('path');
 // TRANSPORTER CONFIGURATION
 // ============================================
 
-console.log('🔧 Initializing Email Service...');
+// Email service initialized (verbose startup logs removed)
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -15,8 +14,6 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER || 'surbhivasoya11@gmail.com',
     pass: process.env.EMAIL_PASSWORD || 'hvey iiqt jqfz krxc',
   },
-  debug: true, // Enable debug output
-  logger: true, // Log information to console
 });
 
 // Set handlebars options
@@ -37,21 +34,8 @@ transporter.verify(function (error, success) {
   if (error) {
     console.error('❌ EMAIL CONFIGURATION ERROR:', error.message);
     console.error('   Error Code:', error.code);
-    console.log('\n🔧 TROUBLESHOOTING:');
-    console.log(
-      '   1. Check Gmail App Password at: https://myaccount.google.com/apppasswords'
-    );
-    console.log('   2. Make sure 2-Step Verification is enabled');
-    console.log('   3. Generate NEW App Password');
-    console.log('   4. Update mailService.js line 14');
-    console.log('   5. RESTART the server\n');
   } else {
-    console.log('✅ Email server is ready to send messages');
-    console.log('   Service: Gmail');
-    console.log(
-      '   User:',
-      process.env.EMAIL_USER || 'surbhivasoya11@gmail.com'
-    );
+    console.log('✅ Email server ready');
   }
 });
 
@@ -61,7 +45,6 @@ transporter.verify(function (error, success) {
 
 exports.sendJobLinkEmail = async (to, token) => {
   try {
-    console.log('📧 Sending job link email to:', to);
     const link = `https://aiinterview.deepvox.ai/?token=${token}`;
 
     await transporter.sendMail({
@@ -71,8 +54,6 @@ exports.sendJobLinkEmail = async (to, token) => {
       template: 'jobLink',
       context: { link },
     });
-
-    console.log('✅ Job link email sent successfully to:', to);
     return true;
   } catch (error) {
     console.error('❌ Error sending job link email to:', to);
@@ -91,13 +72,7 @@ exports.sendStudentExamEmail = async (emailData) => {
     const { jobTitle, company, location, examLink, messageTemplate, students } =
       emailData;
 
-    console.log('\n📧 ================================================');
-    console.log('   SENDING STUDENT EXAM EMAILS');
-    console.log('   ================================================');
-    console.log('   Job:', jobTitle, 'at', company);
-    console.log('   Total Students:', students.length);
-    console.log('   Exam Link:', examLink);
-    console.log('   ================================================\n');
+    // Reduced verbose logging for bulk email send
 
     const results = [];
     let successCount = 0;
@@ -107,11 +82,7 @@ exports.sendStudentExamEmail = async (emailData) => {
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
 
-      console.log(
-        `\n[${i + 1}/${students.length}] Processing: ${student.name} (${
-          student.email
-        })`
-      );
+      // Minimal per-student progress (kept silent to reduce noise)
 
       try {
         // Replace {studentName} placeholder
@@ -121,7 +92,6 @@ exports.sendStudentExamEmail = async (emailData) => {
             /{studentName}/g,
             student.name
           );
-          console.log('   ✓ Message personalized');
         } else {
           personalizedMessage = `Dear ${student.name},
 
@@ -135,7 +105,6 @@ Please complete the interview at your earliest convenience. If you have any ques
 
 Best regards,
 HR Team`;
-          console.log('   ✓ Using default message template');
         }
 
         // Create email
@@ -213,16 +182,8 @@ ${personalizedMessage}
           `,
         };
 
-        console.log('   ✓ Email template created');
-        console.log('   → Sending email...');
-
         // Send email
         const info = await transporter.sendMail(mailOptions);
-
-        console.log('   ✅ SUCCESS!');
-        console.log('   → Message ID:', info.messageId);
-        console.log('   → Response:', info.response);
-
         successCount++;
         results.push({
           success: true,
@@ -231,16 +192,15 @@ ${personalizedMessage}
           messageId: info.messageId,
         });
       } catch (error) {
-        console.error('   ❌ FAILED!');
-        console.error('   → Error:', error.message);
-        console.error('   → Code:', error.code);
+        console.error('❌ Error sending to', student.email, '-', error.message);
+        console.error('   Code:', error.code);
 
         if (error.message.includes('535')) {
-          console.error('   → REASON: Invalid Gmail credentials');
-          console.error('   → FIX: Generate new App Password');
+          console.error('   REASON: Invalid Gmail credentials');
+          console.error('   FIX: Generate new App Password');
         } else if (error.message.includes('timeout')) {
-          console.error('   → REASON: Network timeout');
-          console.error('   → FIX: Check firewall/network settings');
+          console.error('   REASON: Network timeout');
+          console.error('   FIX: Check firewall/network settings');
         }
 
         failCount++;
@@ -259,37 +219,13 @@ ${personalizedMessage}
       }
     }
 
-    console.log('\n📊 ================================================');
-    console.log('   EMAIL SENDING SUMMARY');
-    console.log('   ================================================');
-    console.log('   Total:', students.length);
-    console.log('   ✅ Successful:', successCount);
-    console.log('   ❌ Failed:', failCount);
-    console.log('   ================================================\n');
+    // Concise summary
+    console.log(
+      `Email send summary: total=${students.length} successful=${successCount} failed=${failCount}`
+    );
 
     if (failCount > 0) {
-      console.log('⚠️  FAILED EMAILS:');
-      results
-        .filter((r) => !r.success)
-        .forEach((r) => {
-          console.log(`   • ${r.name} (${r.email}): ${r.error}`);
-        });
-      console.log('\n🔧 TROUBLESHOOTING:');
-      console.log('   1. Check Gmail App Password');
-      console.log('   2. Verify email addresses are correct');
-      console.log('   3. Check SPAM folders for recipients');
-      console.log('   4. Look for Gmail security alerts\n');
-    }
-
-    if (successCount > 0) {
-      console.log('📬 CHECK INBOXES:');
-      results
-        .filter((r) => r.success)
-        .forEach((r) => {
-          console.log(`   ✓ ${r.name}: ${r.email}`);
-        });
-      console.log('\n💡 TIP: Emails may take 1-2 minutes to arrive');
-      console.log('💡 TIP: Check SPAM/Junk folders if not in inbox\n');
+      console.warn('Some emails failed. See results array for details.');
     }
 
     return {
