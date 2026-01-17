@@ -13,6 +13,16 @@ module.exports = (sequelize) => {
       },
 
       // Basic student info
+      firstName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      lastName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       name: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -26,6 +36,17 @@ module.exports = (sequelize) => {
       mobile: {
         type: DataTypes.STRING,
         allowNull: true,
+      },
+
+      highestQualification: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      educations: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: [],
       },
 
       // Job post association
@@ -102,6 +123,11 @@ module.exports = (sequelize) => {
       },
 
       interviewVideoLink: {
+        type: DataTypes.STRING(2048),
+        allowNull: true,
+      },
+
+      photoUrl: {
         type: DataTypes.STRING(2048),
         allowNull: true,
       },

@@ -4,7 +4,7 @@ module.exports = (sequelize) => {
     jobTitle: { type: DataTypes.STRING, allowNull: false },
     company: { type: DataTypes.STRING, allowNull: false },
     department: { type: DataTypes.STRING, allowNull: false },
-    location: { type: DataTypes.STRING, allowNull: false },
+    location: { type: DataTypes.JSON, allowNull: false, defaultValue: [] },
     jobType: { type: DataTypes.STRING, allowNull: false },
     experienceLevel: { type: DataTypes.STRING, allowNull: false },
     jobDescription: { type: DataTypes.TEXT, allowNull: false },

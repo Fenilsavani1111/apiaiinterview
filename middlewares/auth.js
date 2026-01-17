@@ -1,4 +1,3 @@
-// apiaiinterview/middlewares/auth.js
 const jwt = require('jsonwebtoken');
 
 /**
@@ -28,17 +27,15 @@ const authMiddleware = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(
-      token, 
+      token,
       process.env.JWT_SECRET || 'your-secret-key'
     );
 
     // Add user info to request
     req.user = {
       id: decoded.id,
-      email: decoded.email
+      email: decoded.email,
     };
-
-    console.log('✅ Auth successful:', { userId: decoded.id, email: decoded.email });
 
     // Proceed to next middleware/controller
     next();

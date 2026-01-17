@@ -32,17 +32,34 @@ const SECRET = process.env.LINK_TOKEN_SECRET || 'your-very-secret-key';
 
 // Helper to include all nested data
 const fullInclude = [
-  { model: JobRequirement, as: 'requirements', order: [['id', 'ASC']] },
-  { model: JobResponsibility, as: 'responsibilities', order: [['id', 'ASC']] },
-  { model: JobSkill, as: 'skills', order: [['id', 'ASC']] },
+  {
+    model: JobRequirement,
+    as: 'requirements',
+    separate: true,
+    order: [['id', 'ASC']],
+  },
+  {
+    model: JobResponsibility,
+    as: 'responsibilities',
+    separate: true,
+    order: [['id', 'ASC']],
+  },
+  {
+    model: JobSkill,
+    as: 'skills',
+    separate: true,
+    order: [['id', 'ASC']],
+  },
   {
     model: InterviewQuestion,
     as: 'interviewQuestions',
+    separate: true,
     order: [['id', 'ASC']],
     include: [
       {
         model: InterviewAnswerPoint,
         as: 'suggestedAnswerPoints',
+        separate: true,
         order: [['id', 'ASC']],
       },
     ],
@@ -58,7 +75,11 @@ const transformJobPostForFrontend = (jobPost) => {
     title: jobPost.jobTitle,
     company: jobPost.company,
     department: jobPost.department,
-    location: jobPost.location,
+    location: Array.isArray(jobPost.location)
+      ? jobPost.location
+      : jobPost.location
+      ? [jobPost.location]
+      : [],
     type: jobPost.jobType,
     experience: jobPost.experienceLevel,
     description: jobPost.jobDescription,
@@ -103,7 +124,7 @@ const transformJobPostForFrontend = (jobPost) => {
   return transformed;
 };
 
-// CREATE
+// create job post
 exports.createJobPost = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -123,13 +144,30 @@ exports.createJobPost = async (req, res) => {
       skills = [],
       questions = [],
       students = [],
+      enableVideoRecording = false,
     } = req.body;
+
+    if (
+      !title ||
+      !company ||
+      !department ||
+      !location ||
+      !type ||
+      !experience ||
+      !description ||
+      !salary ||
+      !requirements ||
+      !responsibilities ||
+      !skills ||
+      !questions
+    )
+      return res.status(400).json({ error: 'All fields are required' });
 
     const jobPostData = {
       jobTitle: title,
       company,
       department,
-      location,
+      location: Array.isArray(location) ? location : location ? [location] : [],
       jobType: type,
       experienceLevel: experience,
       jobDescription: description,
@@ -137,9 +175,8 @@ exports.createJobPost = async (req, res) => {
       salaryMax: salary?.max,
       salaryCurrency: salary?.currency,
       status: status,
-      createdBy: createdBy,
-      // Default to false if not explicitly enabled from the admin UI
-      enableVideoRecording: req.body.enableVideoRecording === true,
+      createdBy: createdBy || 'admin',
+      enableVideoRecording: enableVideoRecording || false,
     };
 
     const jobPost = await JobPost.create(jobPostData, { transaction: t });
@@ -217,29 +254,34 @@ exports.createJobPost = async (req, res) => {
     const created = await JobPost.findByPk(jobPost.id, {
       include: fullInclude,
     });
-    res.status(201).json(transformJobPostForFrontend(created));
+    return res.status(201).json(transformJobPostForFrontend(created));
   } catch (err) {
     await t.rollback();
-    res.status(500).json({ error: err.message });
+    console.log('err Failed to create job post', err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// GET ALL
+// get all job posts
 exports.getAllJobPosts = async (req, res) => {
   try {
-    const posts = await JobPost.findAll({ include: fullInclude });
+    const posts = await JobPost.findAll({
+      include: fullInclude,
+      order: [['createdAt', 'DESC']],
+    });
+
     let damiposts = posts.map(transformJobPostForFrontend);
     damiposts = damiposts.sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
-    res.json(damiposts);
+    return res.status(200).json(damiposts);
   } catch (err) {
     console.log('err Failed to fetch jobpost', err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// GET ONE
+// get job post by id
 exports.getJobPostById = async (req, res) => {
   try {
     const post = await JobPost.findByPk(req.params.id, {
@@ -254,11 +296,12 @@ exports.getJobPostById = async (req, res) => {
       candidates: candidates,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.log('err Failed to get job post by id', err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// UPDATE
+// update job post
 exports.updateJobPost = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -278,6 +321,8 @@ exports.updateJobPost = async (req, res) => {
       questions = [],
     } = req.body;
 
+    if (!id) return res.status(400).json({ error: 'Job post id is required' });
+
     const jobPost = await JobPost.findByPk(id);
     if (!jobPost) return res.status(404).json({ error: 'Job post not found' });
 
@@ -285,7 +330,7 @@ exports.updateJobPost = async (req, res) => {
       jobTitle: title,
       company,
       department,
-      location,
+      location: Array.isArray(location) ? location : location ? [location] : [],
       jobType: type,
       experienceLevel: experience,
       jobDescription: description,
@@ -362,29 +407,34 @@ exports.updateJobPost = async (req, res) => {
     }
     await t.commit();
     const updated = await JobPost.findByPk(id, { include: fullInclude });
-    res.json(transformJobPostForFrontend(updated));
+    return res.status(200).json(transformJobPostForFrontend(updated));
   } catch (err) {
     await t.rollback();
-    res.status(500).json({ error: err.message });
+    console.log('err Failed to update job post by id ', err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// DELETE
+// delete job post
 exports.deleteJobPost = async (req, res) => {
   try {
     const id = req.params.id;
+    if (!id) return res.status(400).json({ error: 'Job post id is required' });
+
     const deleted = await JobPost.destroy({ where: { id } });
     if (!deleted) return res.status(404).json({ error: 'Job post not found' });
-    res.json({ message: 'Job post deleted' });
+    return res.status(200).json({ message: 'Job post deleted' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.log('err Failed to delete job post', err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// LINK share with mail
+// link share with mail
 exports.linkShareJobPost = async (req, res) => {
   const { jobId, email } = req.body;
   const t = await sequelize.transaction();
+
   if (!jobId || !email) {
     return res.status(400).json({ error: 'jobId and email are required' });
   }
@@ -395,19 +445,17 @@ exports.linkShareJobPost = async (req, res) => {
     }
     const token = jwt.sign({ jobId }, SECRET, { expiresIn: '2d' });
     await sendJobLinkEmail(email, token);
-    res.json({ message: 'Email sent successfully' });
+    return res.status(200).json({ message: 'Email sent successfully' });
   } catch (err) {
     await t.rollback();
-    console.log('err', err);
-    res
+    console.log('err Failed to send job link email', err);
+    return res
       .status(500)
-      .json({ error: 'Failed to send email', details: err.message });
+      .json({ error: 'Failed to send job link email', details: err.message });
   }
 };
 
-// ============================================
 // SEND STUDENT EXAM LINK
-// ============================================
 exports.sendStudentExamLink = async (req, res) => {
   const { jobId, emails, messageTemplate, students } = req.body;
 
@@ -463,23 +511,21 @@ exports.sendStudentExamLink = async (req, res) => {
 
     console.log(`✅ Exam link sent to ${dbStudents.length} student(s)`);
 
-    res.json({
+    return res.status(200).json({
       message: `Examination link sent successfully to ${dbStudents.length} student(s)`,
       count: dbStudents.length,
       sentTo: dbStudents.map((s) => ({ name: s.name, email: s.email })),
     });
   } catch (err) {
     console.error('❌ Send student exam link error:', err);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to send examination link',
       details: err.message,
     });
   }
 };
 
-// ============================================
 // VERIFY EMAIL FOR INTERVIEW ACCESS
-// ============================================
 exports.verifyEmailForInterview = async (req, res) => {
   const { token, email } = req.body;
 
@@ -488,17 +534,9 @@ exports.verifyEmailForInterview = async (req, res) => {
   }
 
   try {
-    console.log('\n🔐 ================================================');
-    console.log('   EMAIL VERIFICATION FOR INTERVIEW ACCESS');
-    console.log('   ================================================');
-    console.log('   Email provided:', email);
-
     // Verify token
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
-
-    console.log('   Job ID:', jobId);
-    console.log('   Token valid: ✅');
 
     // Check if student exists in the allowed list
     const student = await StudentsWithJobPost.findOne({
@@ -509,9 +547,6 @@ exports.verifyEmailForInterview = async (req, res) => {
     });
 
     if (!student) {
-      console.log('   ❌ ACCESS DENIED: Email not in allowed list');
-      console.log('   ================================================\n');
-
       return res.status(403).json({
         success: false,
         error:
@@ -519,27 +554,16 @@ exports.verifyEmailForInterview = async (req, res) => {
       });
     }
 
-    console.log('   ✅ EMAIL VERIFIED');
-    console.log('   Student ID:', student.id);
-    console.log('   Student name:', student.name);
-    console.log('   Status:', student.status);
-
     // Check if already completed
     if (student.status === 'completed') {
-      console.log('   ❌ Interview already completed');
-      console.log('   ================================================\n');
-
       return res.status(400).json({
         success: false,
         error: 'You have already completed this interview.',
       });
     }
 
-    console.log('   ✅ ACCESS GRANTED - Email verified successfully');
-    console.log('   ================================================\n');
-
     // Return success with student info
-    res.json({
+    return res.status(200).json({
       success: true,
       message: 'Email verified successfully',
       student: {
@@ -550,9 +574,6 @@ exports.verifyEmailForInterview = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('❌ Email verification error:', err.message);
-    console.log('   ================================================\n');
-
     if (err.name === 'JsonWebTokenError') {
       return res.status(400).json({
         success: false,
@@ -567,7 +588,7 @@ exports.verifyEmailForInterview = async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Verification failed',
       details: err.message,
@@ -591,21 +612,19 @@ exports.getJobpostbyToken = async (req, res) => {
     if (!job) {
       return res.status(404).json({ error: 'Job post not found' });
     }
-    res.json({
+    return res.status(200).json({
       message: 'Job post found',
       job: job,
     });
   } catch (err) {
-    console.log('err', err);
-    res
-      .status(400)
-      .json({ error: 'Invalid or expired token', details: err.message });
+    console.log('err Failed to get job post by token', err);
+    return res
+      .status(500)
+      .json({ error: 'Failed to get job post by token', details: err.message });
   }
 };
 
-// ============================================
 // JOIN JOB POST WITH TOKEN (WITH EMAIL VERIFICATION)
-// ============================================
 exports.joinJobPostWithToken = async (req, res) => {
   const { token, email } = req.body;
 
@@ -620,17 +639,9 @@ exports.joinJobPostWithToken = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    console.log('\n🔐 ================================================');
-    console.log('   STUDENT INTERVIEW ACCESS ATTEMPT');
-    console.log('   ================================================');
-
     // Verify token
     const decoded = jwt.verify(token, SECRET);
     const jobId = decoded.jobId;
-
-    console.log('   Job ID:', jobId);
-    console.log('   Email:', email);
-    console.log('   Token valid: ✅');
 
     // Fetch job with interview questions
     const job = await JobPost.findByPk(jobId, {
@@ -646,12 +657,8 @@ exports.joinJobPostWithToken = async (req, res) => {
     });
 
     if (!job) {
-      console.log('   ❌ Job not found');
-      console.log('   ================================================\n');
       return res.status(404).json({ error: 'Job post not found' });
     }
-
-    console.log('   Checking email authorization...');
 
     // CRITICAL: Check if student email is in the allowed list
     const allowedStudent = await StudentsWithJobPost.findOne({
@@ -662,55 +669,55 @@ exports.joinJobPostWithToken = async (req, res) => {
     });
 
     if (!allowedStudent) {
-      console.log('   ❌ ACCESS DENIED: Email not authorized');
-      console.log('   Email searched:', email.toLowerCase());
-      console.log('   Job ID:', jobId);
-      console.log('   ================================================\n');
-
       return res.status(403).json({
         error:
           'Access denied. Your email is not authorized for this interview. Please contact HR .',
       });
     }
 
-    console.log('   ✅ Email authorized');
-    console.log('   Student ID:', allowedStudent.id);
-    console.log('   Student name:', allowedStudent.name);
-    console.log('   Current status:', allowedStudent.status);
-
     // Check if already completed
     if (allowedStudent.status === 'completed') {
-      console.log('   ❌ ACCESS DENIED: Interview already completed');
-      console.log('   ================================================\n');
-
       return res.status(400).json({
         error: 'You have already completed this interview.',
       });
     }
 
-    console.log('   ✅ ACCESS GRANTED');
-
     // Extract other data from request
     const {
+      firstName,
+      lastName,
       name,
       resumeUrl,
       mobile,
-      experienceLevel,
-      designation,
+      highestQualification,
+      educations,
       location,
       skills,
     } = req.body;
 
-    console.log('   Updating student record...');
+    // Construct full name from firstName and lastName if provided
+    const fullName =
+      firstName && lastName
+        ? `${firstName} ${lastName}`
+        : name || allowedStudent.name;
+
+    // Use educations array from request, or keep existing if not provided
+    const educationsArray =
+      educations && Array.isArray(educations)
+        ? educations
+        : allowedStudent.educations || [];
 
     // Update student record with additional info
     await allowedStudent.update(
       {
-        name: name || allowedStudent.name,
+        firstName: firstName || allowedStudent.firstName,
+        lastName: lastName || allowedStudent.lastName,
+        name: fullName,
         resumeUrl: resumeUrl || allowedStudent.resumeUrl,
         mobile: mobile || allowedStudent.mobile,
-        experienceLevel: experienceLevel || allowedStudent.experienceLevel,
-        designation: designation || allowedStudent.designation,
+        highestQualification:
+          highestQualification || allowedStudent.highestQualification,
+        educations: educationsArray,
         location: location || allowedStudent.location,
         skills: skills && skills.length > 0 ? skills : allowedStudent.skills,
         status: 'inprogress',
@@ -722,10 +729,6 @@ exports.joinJobPostWithToken = async (req, res) => {
     await job.reload();
 
     await t.commit();
-
-    console.log('   ✅ Student record updated successfully');
-    console.log('   Returning interview questions...');
-    console.log('   ================================================\n');
 
     // Transform questions for frontend
     const questions =
@@ -742,7 +745,7 @@ exports.joinJobPostWithToken = async (req, res) => {
         order: q.id,
       })) || [];
 
-    res.json({
+    return res.status(200).json({
       message: 'Access granted successfully',
       jobId,
       jobTitle: job.jobTitle,
@@ -753,9 +756,7 @@ exports.joinJobPostWithToken = async (req, res) => {
     });
   } catch (err) {
     await t.rollback();
-    console.error('❌ ERROR in joinJobPostWithToken:', err.message);
-    console.log('   ================================================\n');
-
+    console.log('err Failed to join job post with token', err);
     if (err.name === 'JsonWebTokenError') {
       return res.status(400).json({ error: 'Invalid token' });
     }
@@ -766,7 +767,7 @@ exports.joinJobPostWithToken = async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to access interview',
       details: err.message,
     });
@@ -786,10 +787,12 @@ exports.generateTokenForJobInterviewLink = async (req, res) => {
     }
     // Generate token with 30 days validity
     const token = jwt.sign({ jobId }, SECRET, { expiresIn: '30d' });
-    res.json({ token: token, message: 'Token generated successfully' });
+    return res
+      .status(200)
+      .json({ token: token, message: 'Token generated successfully' });
   } catch (err) {
-    console.log('err', err);
-    res.status(500).json({
+    console.log('err Failed to generate token for job interview link', err);
+    return res.status(500).json({
       error: 'Failed to generate job interview link token',
       details: err.message,
     });
@@ -805,11 +808,11 @@ exports.getRecentCandidates = async (req, res) => {
       limit: 5,
       include: [{ model: JobPost, as: 'JobPost' }],
     });
-    res.json({ candidates: candidates });
+    return res.status(200).json({ candidates: candidates });
   } catch (err) {
-    console.log('err', err);
+    console.log('err Failed to get recent candidates', err);
     await t.rollback();
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get recent candidates',
       details: err.message,
     });
@@ -862,14 +865,16 @@ exports.updateStudentWithJobpostById = async (req, res) => {
     });
 
     const updated = await StudentsWithJobPost.findByPk(candidateId);
-    res.json({
+    return res.status(200).json({
       message: 'Candidate details updated successfully',
       candidate: updated,
     });
   } catch (err) {
     await t.rollback();
-    console.log('err', err);
-    res.status(400).json({ error: 'Update failed', details: err.message });
+    console.log('err Failed to update student with jobpost by id', err);
+    return res
+      .status(400)
+      .json({ error: 'Update failed', details: err.message });
   }
 };
 
@@ -893,11 +898,12 @@ exports.getCandidateById = async (req, res) => {
     });
     if (!candidate)
       return res.status(404).json({ error: 'Candidate not found' });
-    res.json({
+    return res.status(200).json({
       candidate: candidate,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.log('err Failed to get candidate by id', err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
@@ -976,7 +982,7 @@ exports.getAdminDashbord = async (req, res) => {
       (sum, item) => sum + item.totalScore,
       0
     );
-    res.json({
+    return res.status(200).json({
       recentCandidates: recentCandidates,
       candidates: candidates,
       summary: {
@@ -992,8 +998,8 @@ exports.getAdminDashbord = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log('err', err);
-    res.status(500).json({
+    console.log('err Failed to get admin dashboard', err);
+    return res.status(500).json({
       error: 'Failed to get dashboard data',
       details: err.message,
     });
@@ -1217,7 +1223,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
       include: [{ model: JobPost, as: 'JobPost' }],
     });
 
-    res.json({
+    return res.status(200).json({
       trends: {
         weekly_scores: finalResult,
         monthly_interview: finalResultinterview,
@@ -1234,23 +1240,15 @@ exports.getAnalyticsDashboard = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log('err', err);
-    res.status(500).json({ error: err.message });
+    console.log('err Failed to get analytics dashboard', err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
-// ============================================
 // BEHAVIORAL ANALYSIS (Local endpoint - NO AUTH REQUIRED)
-// ============================================
 exports.getBehavioralAnalysis = async (req, res) => {
   try {
     const { video_url, questionsWithAnswer, jobData } = req.body;
-
-    console.log('📹 Behavioral analysis request:', {
-      video_url: video_url ? video_url.substring(0, 50) + '...' : null,
-      questionsCount: questionsWithAnswer?.length || 0,
-      hasJobData: !!jobData,
-    });
 
     // Validate input
     if (
@@ -1499,10 +1497,10 @@ exports.getBehavioralAnalysis = async (req, res) => {
       hasVideo: !!video_url,
     });
 
-    res.json(response);
+    return res.status(200).json(response);
   } catch (error) {
     console.error('❌ Behavioral analysis error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       status: 'error',
       error: error.message || 'Internal server error',
       status_code: 500,
