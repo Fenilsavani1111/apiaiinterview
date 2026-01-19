@@ -105,6 +105,7 @@ const transformJobPostForFrontend = (jobPost) => {
         category: q.category,
         suggestedAnswers:
           q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
+        options: Array.isArray(q.options) ? q.options : [],
         isRequired: true,
         order: q.id,
       })) || [],
@@ -210,6 +211,7 @@ exports.createJobPost = async (req, res) => {
         expectedDuration,
         category,
         suggestedAnswers = [],
+        options = [],
       } = q;
       const iq = await InterviewQuestion.create(
         {
@@ -218,6 +220,9 @@ exports.createJobPost = async (req, res) => {
           difficulty,
           duration: expectedDuration,
           category,
+          options: Array.isArray(options)
+            ? options.map((s) => String(s || '').trim()).filter(Boolean)
+            : [],
           jobPostId: jobPost.id,
         },
         { transaction: t }
@@ -383,6 +388,7 @@ exports.updateJobPost = async (req, res) => {
         expectedDuration,
         category,
         suggestedAnswers = [],
+        options = [],
       } = q;
       const iq = await InterviewQuestion.create(
         {
@@ -391,6 +397,9 @@ exports.updateJobPost = async (req, res) => {
           difficulty,
           duration: expectedDuration,
           category,
+          options: Array.isArray(options)
+            ? options.map((s) => String(s || '').trim()).filter(Boolean)
+            : [],
           jobPostId: id,
         },
         { transaction: t }
@@ -689,6 +698,7 @@ exports.joinJobPostWithToken = async (req, res) => {
       name,
       resumeUrl,
       mobile,
+      dob,
       highestQualification,
       educations,
       location,
@@ -715,6 +725,7 @@ exports.joinJobPostWithToken = async (req, res) => {
         name: fullName,
         resumeUrl: resumeUrl || allowedStudent.resumeUrl,
         mobile: mobile || allowedStudent.mobile,
+        dob: dob || allowedStudent.dob,
         highestQualification:
           highestQualification || allowedStudent.highestQualification,
         educations: educationsArray,
@@ -741,6 +752,7 @@ exports.joinJobPostWithToken = async (req, res) => {
         category: q.category,
         suggestedAnswers:
           q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
+        options: Array.isArray(q.options) ? q.options : [],
         isRequired: true,
         order: q.id,
       })) || [];

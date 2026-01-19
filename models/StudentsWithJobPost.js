@@ -38,6 +38,11 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      dob: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+
       highestQualification: {
         type: DataTypes.STRING,
         allowNull: true,
