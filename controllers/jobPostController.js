@@ -1,4 +1,3 @@
-// apiaiinterview/controllers/jobPostController.js - COMPLETE WITH EMAIL AUTHENTICATION
 const {
   JobPost,
   JobRequirement,
@@ -8,7 +7,7 @@ const {
   InterviewAnswerPoint,
   sequelize,
   StudentsWithJobPost,
-  StudentInterviewAnswer,
+  StudentInterviewAnswer
 } = require('../models');
 const jwt = require('jsonwebtoken');
 const {
@@ -106,6 +105,7 @@ const transformJobPostForFrontend = (jobPost) => {
         suggestedAnswers:
           q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
         options: Array.isArray(q.options) ? q.options : [],
+        rightAnswer: q.rightAnswer || null,
         isRequired: true,
         order: q.id,
       })) || [],
@@ -212,7 +212,26 @@ exports.createJobPost = async (req, res) => {
         category,
         suggestedAnswers = [],
         options = [],
+        rightAnswer: rawRightAnswer,
       } = q;
+      const opts = Array.isArray(options)
+        ? options.map((s) => String(s || '').trim()).filter(Boolean)
+        : [];
+      let rightAnswer = null;
+      if (rawRightAnswer != null && String(rawRightAnswer).trim() !== '') {
+        const r = String(rawRightAnswer).trim();
+        if (opts.length === 0) {
+          return res.status(400).json({
+            error: `Question "${(question || '').slice(0, 50)}...": rightAnswer can only be set when options are provided.`,
+          });
+        }
+        if (!opts.includes(r)) {
+          return res.status(400).json({
+            error: `Question "${(question || '').slice(0, 50)}...": rightAnswer must be one of the option values.`,
+          });
+        }
+        rightAnswer = r;
+      }
       const iq = await InterviewQuestion.create(
         {
           question,
@@ -220,9 +239,8 @@ exports.createJobPost = async (req, res) => {
           difficulty,
           duration: expectedDuration,
           category,
-          options: Array.isArray(options)
-            ? options.map((s) => String(s || '').trim()).filter(Boolean)
-            : [],
+          options: opts,
+          rightAnswer,
           jobPostId: jobPost.id,
         },
         { transaction: t }
@@ -389,7 +407,26 @@ exports.updateJobPost = async (req, res) => {
         category,
         suggestedAnswers = [],
         options = [],
+        rightAnswer: rawRightAnswer,
       } = q;
+      const opts = Array.isArray(options)
+        ? options.map((s) => String(s || '').trim()).filter(Boolean)
+        : [];
+      let rightAnswer = null;
+      if (rawRightAnswer != null && String(rawRightAnswer).trim() !== '') {
+        const r = String(rawRightAnswer).trim();
+        if (opts.length === 0) {
+          return res.status(400).json({
+            error: `Question "${(question || '').slice(0, 50)}...": rightAnswer can only be set when options are provided.`,
+          });
+        }
+        if (!opts.includes(r)) {
+          return res.status(400).json({
+            error: `Question "${(question || '').slice(0, 50)}...": rightAnswer must be one of the option values.`,
+          });
+        }
+        rightAnswer = r;
+      }
       const iq = await InterviewQuestion.create(
         {
           question,
@@ -397,9 +434,8 @@ exports.updateJobPost = async (req, res) => {
           difficulty,
           duration: expectedDuration,
           category,
-          options: Array.isArray(options)
-            ? options.map((s) => String(s || '').trim()).filter(Boolean)
-            : [],
+          options: opts,
+          rightAnswer,
           jobPostId: id,
         },
         { transaction: t }
@@ -741,7 +777,7 @@ exports.joinJobPostWithToken = async (req, res) => {
 
     await t.commit();
 
-    // Transform questions for frontend
+    // Transform questions for frontend (include rightAnswer for MCQ evaluation)
     const questions =
       job.interviewQuestions?.map((q) => ({
         id: q.id,
@@ -753,6 +789,7 @@ exports.joinJobPostWithToken = async (req, res) => {
         suggestedAnswers:
           q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
         options: Array.isArray(q.options) ? q.options : [],
+        rightAnswer: q.rightAnswer || null,
         isRequired: true,
         order: q.id,
       })) || [];
