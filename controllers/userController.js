@@ -22,8 +22,6 @@ const userController = {
     try {
       const { email, password } = req.body;
 
-      console.log('🔐 LOGIN ATTEMPT:', { email });
-
       if (!email || !password) {
         return res.status(400).json({
           success: false,
@@ -33,11 +31,10 @@ const userController = {
 
       // Find user by email
       const user = await User.findOne({
-        where: { email: email.trim() }
+        where: { email: email.trim() },
       });
 
       if (!user) {
-        console.log('❌ User not found:', email);
         return res.status(401).json({
           success: false,
           message: 'Invalid credentials',
@@ -56,8 +53,6 @@ const userController = {
 
       // Generate token
       const accessToken = generateToken(user);
-
-      console.log('✅ Login successful:', { email: user.email, userId: user.id });
 
       return res.status(200).json({
         success: true,
@@ -105,7 +100,7 @@ const userController = {
 
       // Check if email already exists
       const existingUser = await User.findOne({
-        where: { email: email.trim() }
+        where: { email: email.trim() },
       });
 
       if (existingUser) {
@@ -157,7 +152,7 @@ const userController = {
   profile: async (req, res) => {
     try {
       const user = await User.findByPk(req.user.id, {
-        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt']
+        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt'],
       });
 
       if (!user) {
@@ -200,30 +195,27 @@ const userController = {
 
       // Build the query options
       const queryOptions = {
-        attributes: [
-          'id',
-          'email',
-          'name',
-          'phoneNumber',
-          'createdAt',
-          'updatedAt'
-        ],
+        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt'],
         limit: limit,
         offset: offset,
         order: [['createdAt', 'DESC']],
-        raw: false
+        raw: false,
       };
 
       // Handle search
-      if (searchParam !== undefined && searchParam !== null && searchParam.toString().trim() !== '') {
+      if (
+        searchParam !== undefined &&
+        searchParam !== null &&
+        searchParam.toString().trim() !== ''
+      ) {
         const searchTerm = searchParam.toString().trim();
         console.log(`🔍 Search filter active: "${searchTerm}"`);
 
         queryOptions.where = {
           [Op.or]: [
             { email: { [Op.iLike]: `%${searchTerm}%` } },
-            { name: { [Op.iLike]: `%${searchTerm}%` } }
-          ]
+            { name: { [Op.iLike]: `%${searchTerm}%` } },
+          ],
         };
       } else {
         console.log('📋 No search filter - fetching all users');
@@ -240,13 +232,13 @@ const userController = {
       console.log('='.repeat(50));
 
       // Transform the results
-      const users = rows.map(user => ({
+      const users = rows.map((user) => ({
         id: user.id,
         email: user.email,
         name: user.name,
         phoneNumber: user.phoneNumber,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
       }));
 
       return res.status(200).json({
@@ -259,7 +251,6 @@ const userController = {
           totalPages: Math.ceil(count / limit),
         },
       });
-
     } catch (error) {
       console.error('='.repeat(50));
       console.error('❌ GET ALL USERS ERROR');
@@ -273,7 +264,7 @@ const userController = {
         message: 'Server error fetching users',
         error: error.message,
         errorType: error.name,
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       });
     }
   },
@@ -286,7 +277,7 @@ const userController = {
       const { id } = req.params;
 
       const user = await User.findByPk(id, {
-        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt']
+        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt'],
       });
 
       if (!user) {
@@ -304,7 +295,7 @@ const userController = {
           name: user.name,
           phoneNumber: user.phoneNumber,
           createdAt: user.createdAt,
-          updatedAt: user.updatedAt
+          updatedAt: user.updatedAt,
         },
       });
     } catch (error) {
@@ -357,7 +348,7 @@ const userController = {
       await user.update(updateData);
 
       const updatedUser = await User.findByPk(id, {
-        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt']
+        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt'],
       });
 
       return res.status(200).json({
@@ -369,7 +360,7 @@ const userController = {
           name: updatedUser.name,
           phoneNumber: updatedUser.phoneNumber,
           createdAt: updatedUser.createdAt,
-          updatedAt: updatedUser.updatedAt
+          updatedAt: updatedUser.updatedAt,
         },
       });
     } catch (error) {
