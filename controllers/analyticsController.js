@@ -1,4 +1,3 @@
-// routes/dashboard.js
 const express = require("express");
 const { Op } = require("sequelize");
 const router = express.Router();
@@ -13,7 +12,7 @@ const {
 
 const PASS_THRESHOLD = 60;
 
-const getJobPerformanceJS = async ({ days = 30, jobId = null }) => {
+const getJobPerformanceJS = async ({ days = 30, jobId = null, userId = null }) => {
   const since = new Date();
   since.setDate(since.getDate() - days);
 
@@ -21,7 +20,7 @@ const getJobPerformanceJS = async ({ days = 30, jobId = null }) => {
 
   // Fetch jobs with student interviews and answers
   const jobs = await JobPost.findAll({
-    where: whereJob,
+    where: { ...whereJob, userId: userId },
     include: [
       {
         model: StudentsWithJobPost,
@@ -114,7 +113,8 @@ router.get("/job-performance", async (req, res) => {
   try {
     const days = req.query.days ? Number(req.query.days) : 30;
     const jobId = req.query.jobId || null;
-    const data = await getJobPerformanceJS({ days, jobId });
+    const userId = req.user?.id;
+    const data = await getJobPerformanceJS({ days, jobId, userId });
     res.json({ success: true, data });
   } catch (err) {
     console.error(err);

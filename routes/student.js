@@ -1,4 +1,3 @@
-// apiaiinterview/routes/student.js - UNCHANGED
 const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');

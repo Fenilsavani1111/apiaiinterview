@@ -1,5 +1,3 @@
-// apiaiinterview/middlewares/admin.js
-
 /**
  * Admin middleware - checks if authenticated user is an admin
  * Must be used after authMiddleware

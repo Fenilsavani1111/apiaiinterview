@@ -1,4 +1,3 @@
-// apiaiinterview/models/StudentsWithJobPost.js - USING EXISTING COLUMNS ONLY
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
@@ -65,6 +64,17 @@ module.exports = (sequelize) => {
         type: DataTypes.DATE,
         allowNull: true,
         defaultValue: null,
+      },
+
+      invitedDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      },
+
+      submissionStatus: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
 
       interviewDate: {
@@ -157,6 +167,16 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
 
+      residenceLocation: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      educationDetails: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
       attemptedQuestions: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
@@ -200,6 +220,33 @@ module.exports = (sequelize) => {
       video_analysis_insights: {
         type: DataTypes.JSON,
         allowNull: true,
+      },
+
+      // Government ID proof - array of { idProofType, value, verified }
+      governmentProof: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        defaultValue: [],
+        comment: 'Array of { idProofType, value, verified (boolean) }',
+      },
+
+      region: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      proctoringStatus: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      // Category Percentage - Overall + category-wise scores
+      // Structure: { overallScore, totalScore, overallPercentage, categoryWisePercentage: { "Communication Skills": 50, "Reasoning Ability": 70, ... } }
+      categoryPercentage: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+        comment:
+          'Overall Score, Overall %, Category-wise % (Communication Skills, Reasoning Ability, Costing, Accounting, FP&A, Excel (Advanced))',
       },
     },
     {

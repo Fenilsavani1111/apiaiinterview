@@ -1,0 +1,879 @@
+[
+  {
+    "name": "Laxmi",
+    "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+    "email": "laxmi995519@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus": "Under review",
+    "categoryPercentage": {
+      "overallScore": 41,
+      "totalScore": 50,
+      "overallPercentage": 82,
+      "categoryWisePercentage": {
+        "Communication Skills": 66.67,
+        "Reasoning Ability": 80,
+        "Costing": 100,
+        "Accounting": 92.86,
+        "FP&A": 100,
+        "Excel (Advanced)": 83.33
+      }
+    },
+    "proctoringStatus": "No",
+    "region": "India",
+    "location": "Dhanbad",
+    "residenceLocation": null,
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.2994591244538233_Resume_Sample.pdf",
+    "educations": [
+      { "qualification": "10th", "score": 9.6, "year": 2013 },
+      { "qualification": "12th", "score": 88, "year": 2015 },
+      { "qualification": "Degree", "score": 7.13, "year": 2018 },
+      { "qualification": "PG", "score": null, "year": null }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "555555555555", "verified" : false },
+      { "idProofType": "Govt ID 2", "value": "5555555555", "verified" : false }
+    ]
+  },
+
+  {
+    "name": "K Shalini",
+    "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+    "email": "kshalini575@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus"    : "Under review",
+    "categoryPercentage": {
+      "overallScore": 40,
+      "totalScore": 50,
+      "overallPercentage": 80,
+      "categoryWisePercentage": {
+        "Communication Skills": 80,
+        "Reasoning Ability": 66,
+        "Costing": 83,
+        "Accounting": 92,
+        "FP&A": 83,
+        "Excel (Advanced)": 83
+      }
+    },
+    "proctoringStatus": "No",
+    "region": "India",
+    "location": "Hazaribagh",
+    "residenceLocation": null,
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.7235632280980551_CV_Kumari_Shalini_Rani.pdf",
+    "educations": [
+      { "qualification" : "10th", "score": 81.2, "year": 2013 },
+      { "qualification": "12th", "score": 91.2, "year": 2015 },
+      { "qualification": "Degree", "score": 68.89, "year": 2021 },
+      { "qualification": "PG", "score": null, "year": null }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "703571192128", "verified": true },
+      { "idProofType": "Govt ID 2", "value": "DRZPR0065M", "verified": false }
+    ]
+  },
+
+  {
+    "name": "Nanda Kishore",
+    "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+    "email": "nanda.kishore.2110@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus": "Under review",
+    "categoryPercentage": {
+      "overallScore": 39,
+      "totalScore": 50,
+      "overallPercentage": 78,
+      "categoryWisePercentage": {
+        "Communication Skills": 67,
+        "Reasoning Ability": 78,
+        "Costing": 75,
+        "Accounting": 89,
+        "FP&A": 67,
+        "Excel (Advanced)": 71
+      }
+    },
+    "proctoringStatus": "No",
+    "region": "India",
+    "location": "Adoni",
+    "residenceLocation": null,
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.17573668319063096_CA_RESUME.pdf",
+    "educations": [
+      { "qualification": "10th", "score": 88, "year": 2013 },
+      { "qualification": "12th", "score": 92.1, "year": 2015 },
+      { "qualification": "Degree", "score": 59, "year": 2025 },
+      { "qualification": "PG", "score": null, "year": null }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "498094843728", "verified": true },
+      { "idProofType": "Govt ID 2", "value": "ESWPM6669F", "verified": true }
+    ]
+  },
+
+  {
+    "name"  : "Jaswanth Teegela",
+    "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+    "email": "jaswanth.teegela@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus": "Under review",
+    "categoryPercentage": {
+      "overallScore"    : 41,
+      "totalScore": 50,
+      "overallPercentage": 82,
+      "categoryWisePercentage": {
+        "Communication Skills": 78,
+        "Reasoning Ability": 86,
+        "Costing": 83,
+        "Accounting": 92,
+        "FP&A": 75,
+        "Excel (Advanced)": 80
+      }
+    },
+    "proctoringStatus": "No",
+    "region"    : "India",
+    "location": "Visakhapatnam",
+    "residenceLocation": "Pendurthi",
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/760/profile/0.5829554860767879_Jaswanth_Chartered_Accountant_Resume.pdf",
+    "educations"  : [
+      { "qualification": "10th", "score": 9.5, "year": 2014 },
+      { "qualification": "12th", "score": 95, "year": 2016 },
+      { "qualification": "Degree", "score": 62, "year": 2024 },
+      { "qualification": "PG", "score": null, "year": null }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "631548152543", "verified": false },
+      { "idProofType": "Govt ID 2", "value": "BPBPT7076J", "verified": true }
+    ]
+  },
+  {
+    "name": "Rohith Kumar G",
+    "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+    "email": "grohith2014@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus": "Under review",
+    "categoryPercentage": {
+      "overallScore": 40,
+      "totalScore": 50,
+      "overallPercentage": 80,
+      "categoryWisePercentage": {
+        "Communication Skills": 78,
+        "Reasoning Ability": 86,
+        "Costing": 83,
+        "Accounting": 88,
+        "FP&A": 75,
+        "Excel (Advanced)": 80
+      }
+    },
+    "proctoringStatus": "No",
+    "region": "India",
+    "location": "Hyderabad",
+    "residenceLocation": null,
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.3069712266308906_Rohith_Kumar_G_Resume.pdf",
+    "educations": [
+      { "qualification": "10th", "score": 8.5, "year": 2013 },
+      { "qualification": "12th", "score": 90, "year": 2015 },
+      { "qualification": "Degree", "score": 60, "year": 2021 },
+      { "qualification": "PG", "score": null, "year": null }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "761455071417", "verified": true },
+      { "idProofType": "Govt ID 2", "value": "CHPPG9511A", "verified": false }
+    ]
+  },
+  {
+    "name": "Sravan Kumar",
+    "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+    "email": "casravankumar45@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus": "Under review",
+    "categoryPercentage": {
+      "overallScore": 39,
+      "totalScore": 50,
+      "overallPercentage": 78,
+      "categoryWisePercentage": {
+        "Communication Skills": 75,
+        "Reasoning Ability": 86,
+        "Costing": 83,
+        "Accounting": 88,
+        "FP&A": 50,
+        "Excel (Advanced)": 67
+      }
+    },
+    "proctoringStatus": "No",
+    "region": "India",
+    "location": "Visakhapatnam",
+    "residenceLocation": null,
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.8589897614508749_CA_Sravan_Kumar_Resume.pdf",
+    "educations": [
+      { "qualification": "10th", "score": 8.8, "year": 2014 },
+      { "qualification": "12th", "score": 93, "year": 2016 },
+      { "qualification": "Degree", "score": 6.43, "year": 2020 },
+      { "qualification": "PG", "score": null, "year": null }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "714927539440", "verified": false },
+      { "idProofType": "Govt ID 2", "value": "DUDPR2719R", "verified": true }
+    ]
+  },    
+  {
+    "name": "Bijay Kothari",
+    "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+    "email": "bijaykothari2665@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus": "Under review",
+    "categoryPercentage": {
+      "overallScore": 46,
+      "totalScore": 50,
+      "overallPercentage": 92,
+      "categoryWisePercentage": {
+        "Communication Skills": 100,
+        "Reasoning Ability": 86,
+        "Costing": 100,
+        "Accounting": 100,
+        "FP&A": 100,
+        "Excel (Advanced)": 100
+      }
+    },
+    "proctoringStatus"  : "No",
+    "region": "India",
+    "location": "Bangalore Urban",
+    "residenceLocation": null,
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.33763780470566973_CA_Bijay_Kothari_Resume.pdf",
+    "educations": [
+      { "qualification": "10th", "score": 86, "year": 2017 },
+      { "qualification": "12th", "score": 90, "year": 2019 },
+      { "qualification": "Degree", "score": 55, "year": 2025 },
+      { "qualification": "PG", "score": 82, "year": 2022 }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "821182827617", "verified": true },
+      { "idProofType": "Govt ID 2", "value": "JKKPK5869J", "verified": true }
+    ]
+  },
+    {
+      "name": "Anil Kumar Reddy",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "caanilkumarreddysure@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 43,
+        "totalScore": 50,
+        "overallPercentage": 86,
+        "categoryWisePercentage": {
+          "Communication Skills": 78,
+          "Reasoning Ability": 86,
+          "Costing": 92,
+          "Accounting": 100,
+          "FP&A": 100,
+          "Excel (Advanced)": 100
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Kandukur",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.051000570289585934_CA_Anil_Resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 92, "year": 2013 },
+        { "qualification": "12th", "score": 95, "year": 2015 },
+        { "qualification": "Degree", "score": 54, "year": 2025 },
+        { "qualification": "PG", "score": 54, "year": 2025 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "363134002826", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "IHEPS6320E", "verified": false }
+      ]
+    },
+    {
+      "name": "Mahithab Shaik",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":42,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "mahithabshaik@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 42,
+        "totalScore": 50,
+        "overallPercentage": 84,
+        "categoryWisePercentage": {
+          "Communication Skills": 70,
+          "Reasoning Ability": 80,
+          "Costing": 75,
+          "Accounting": 80,
+          "FP&A": 100,
+          "Excel (Advanced)": 83.33
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Hyderabad",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.3345880132601692_Mahithab_shaik_Resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 9.8, "year": 2013 },
+        { "qualification": "12th", "score": 89.4, "year": 2015 },
+        { "qualification": "Degree", "score": 58.67, "year": 2023 },
+        { "qualification": "PG", "score": null, "year": null }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "845931616161", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "LERPS6373E", "verified": false }
+      ]
+    },
+    {
+      "name": "Ankita Chopra",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":42,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "caankitachopra25@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 42,
+        "totalScore": 50,
+        "overallPercentage": 84,
+        "categoryWisePercentage": {
+          "Communication Skills": 70,
+          "Reasoning Ability": 80,
+          "Costing": 75,
+          "Accounting": 80,
+          "FP&A": 100,
+          "Excel (Advanced)": 83.33
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Kolkata",
+      "residenceLocation": null,
+      "resumeUrl": null,
+      "educations": [
+        { "qualification": "10th", "score": 76.5, "year": 2014 },
+        { "qualification": "12th", "score": 83.5, "year": 2016 },
+        { "qualification": "Degree", "score": 51.9, "year": 2019 },
+        { "qualification": "PG", "score": 67.3, "year": 2021 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "210446463235", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "BIAPC4127M", "verified": true }
+      ]
+    },
+    {
+      "name": "Sudipta Dash",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":42,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "sudiptadash1996@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 42,
+        "totalScore": 50,
+        "overallPercentage": 84,
+        "categoryWisePercentage": {
+          "Communication Skills": 70,
+          "Reasoning Ability": 80,
+          "Costing": 75,
+          "Accounting": 80,
+          "FP&A": 100,
+          "Excel (Advanced)": 83.33
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Bhubaneshwar",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.8730110862664304_SUDIPTA_RESUME.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 85.83, "year": 2011 },
+        { "qualification": "12th", "score": 76.83, "year": 2013 },
+        { "qualification": "Degree", "score": 67.83, "year": 2016 },
+        { "qualification": "PG", "score": null, "year": null }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "598878096800", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "DZRPD0765G", "verified": false }
+      ]
+    },
+    {
+      "name": "Sudheer Karapa",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":40,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "sudheerkarapa@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 40,
+        "totalScore": 50,
+        "overallPercentage": 80,
+        "categoryWisePercentage": {
+          "Communication Skills": 60,
+          "Reasoning Ability": 80,
+          "Costing": 75,
+          "Accounting": 80,
+          "FP&A": 100,
+          "Excel (Advanced)": 100
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Hyderabad",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.5759596468895417_Sudheer_Karapa.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 84, "year": 2010 },
+        { "qualification": "12th", "score": 89, "year": 2012 },
+        { "qualification": "Degree", "score": 70, "year": 2016 },
+        { "qualification": "PG", "score": 53, "year": 2025 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "317196786336", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "FINPK5182H", "verified": true }
+      ]
+    },
+    {
+      "name": "Venu Pothina",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":40,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "venupothina@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 40,
+        "totalScore": 50,
+        "overallPercentage": 80,
+        "categoryWisePercentage": {
+          "Communication Skills": 60,
+          "Reasoning Ability": 80,
+          "Costing": 75,
+          "Accounting": 80,
+          "FP&A": 100,
+          "Excel (Advanced)": 100
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Visakhapatnam",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.2712356239878695_CA_venu_Resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 85, "year": 2015 },
+        { "qualification": "12th", "score": 93, "year": 2018 },
+        { "qualification": "Degree", "score": null, "year": null },
+        { "qualification": "PG", "score": null, "year": null }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "581759155685", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "EAWPG7417R", "verified": true }
+      ]
+    },
+    {
+      "name": "Prasad Reddy",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":39,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "prasadreddyb222@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 39,
+        "totalScore": 50,
+        "overallPercentage": 78,
+        "categoryWisePercentage": {
+          "Communication Skills": 71,
+          "Reasoning Ability": 86,
+          "Costing": 83,
+          "Accounting": 88,
+          "FP&A": 100,
+          "Excel (Advanced)": 83
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Nalgonda",
+      "residenceLocation": "Nalgonda",
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.21875834693605867_Prasad_Reddy_CA_Resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 9.7, "year": 2013 },
+        { "qualification": "12th", "score": 91.2, "year": 2015 },
+        { "qualification": "Degree", "score": 8.64, "year": 2019 },
+        { "qualification": "PG", "score": 52.5, "year": 2025 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "801813179070", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "FTDPB8671P", "verified": true }
+      ]
+    },
+    {
+      "name": "Naveen Kumar Reddy",
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+      "email": "naveenkumarreddy507@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 45,
+        "totalScore": 50,
+        "overallPercentage": 90,
+        "categoryWisePercentage": {
+          "Communication Skills": 70,
+          "Reasoning Ability": 90,
+          "Costing": 100,
+          "Accounting": 100,
+          "FP&A": 100,
+          "Excel (Advanced)": 100
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Visakhapatnam",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.5669902052786446_Naveen_Kumar_Resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 9.3, "year": 2014 },
+        { "qualification": "12th", "score": 94, "year": 2016 },
+        { "qualification": "Degree", "score": null, "year": null },
+        { "qualification": "PG", "score": null, "year": null }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "569660197535", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "CCHPN3962K", "verified": true }
+      ]
+    },
+    {
+      "name": "Sai Ram Sankiti",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+      "email": "sankitisairam@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 43,
+        "totalScore": 50,
+        "overallPercentage": 86,
+        "categoryWisePercentage": {
+          "Communication Skills": 70,
+          "Reasoning Ability": 80,
+          "Costing": 88,
+          "Accounting": 100,
+          "FP&A": 100,
+          "Excel (Advanced)": 83
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Siddipet",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.14506252391032315_Sairam_Ca.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 8.8, "year": 2017 },
+        { "qualification": "12th", "score": 92, "year": 2019 },
+        { "qualification": "Degree", "score": 0, "year": 0 },
+        { "qualification": "PG", "score": 0, "year": 0 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "967344205165", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "MZRPS8502B", "verified": true }
+      ]
+    },
+    {
+      "name": "Nikhil Das",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":36,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "nikhildas617@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 36,
+        "totalScore": 50,
+        "overallPercentage": 72,
+        "categoryWisePercentage": {
+          "Communication Skills": 60,
+          "Reasoning Ability": 70,
+          "Costing": 60,
+          "Accounting": 80,
+          "FP&A": 80,
+          "Excel (Advanced)": 70
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Kurnool",
+      "residenceLocation": "India",
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.09996922592820523_Nikhil_Das_Resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 88, "year": 2012 },
+        { "qualification": "12th", "score": 87.5, "year": 2014 },
+        { "qualification": "Degree", "score": 0, "year": 0 },
+        { "qualification": "PG", "score": 50, "year": 2025 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "515404943657", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "AIHPU4168N", "verified": false }
+      ]
+    },
+    {
+      "name": "Bhargavi Kolnati",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":39,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "bhargavikolnati99@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 39,
+        "totalScore": 50,
+        "overallPercentage": 78,
+        "categoryWisePercentage": {
+          "Communication Skills": 60,
+          "Reasoning Ability": 70,
+          "Costing": 60,
+          "Accounting": 90,
+          "FP&A": 80,
+          "Excel (Advanced)": 70
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Guntur",
+      "residenceLocation": "Amaravathi",
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/751/profile/0.9685062377084566_CA_Bhargavi_resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 95, "year": 2012 },
+        { "qualification": "12th", "score": 96, "year": 2014 },
+        { "qualification": "Degree", "score": 73, "year": 2017 },
+        { "qualification": "PG", "score": null, "year": null }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "769132101718", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "FEHPK9787L", "verified": false }
+      ]
+    },
+    {
+      "name": "Lakshmi Prasanna Mandava",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":38,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "mandavaprasanna54@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 38,
+        "totalScore": 50,
+        "overallPercentage": 76,
+        "categoryWisePercentage": {
+          "Communication Skills": 60,
+          "Reasoning Ability": 70,
+          "Costing": 70,
+          "Accounting": 100,
+          "FP&A": 100,
+          "Excel (Advanced)": 70
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Vijayawada",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.1610555719771184_Lakshmi_Prasanna_Mandava_CA_Resume.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 90, "year": 2014 },
+        { "qualification": "12th", "score": 93, "year": 2016 },
+        { "qualification": "Degree", "score": 61, "year": 2023 },
+        { "qualification": "PG", "score": 60.87, "year": 2025 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "333207933774", "verified": false },
+        { "idProofType": "Govt ID 2", "value": "FOWPM3089G", "verified": false }
+      ]
+    },
+    {
+      "name": "Swathi Reddy Solipuram",
+      "duration":60,
+      "appliedDate": "2026-01-19",
+      "status":"completed",
+      "overallScore":43,
+      "totalScore":50,
+      "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+      "experienceLevel":"entry",
+      "attemptedQuestions":50,
+          "email": "swathireddy1128@gmail.com",
+      "invitedDate": "2026-01-19",
+      "submissionStatus": "Under review",
+      "categoryPercentage": {
+        "overallScore": 43,
+        "totalScore": 50,
+        "overallPercentage": 86,
+        "categoryWisePercentage": {
+          "Communication Skills": 60,
+          "Reasoning Ability": 90,
+          "Costing": 100,
+          "Accounting": 90,
+          "FP&A": 100,
+          "Excel (Advanced)": 83
+        }
+      },
+      "proctoringStatus": "No",
+      "region": "India",
+      "location": "Hyderabad",
+      "residenceLocation": null,
+      "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.02644258394897414_CA_Solipuram_Swathi_-_CV.pdf",
+      "educations": [
+        { "qualification": "10th", "score": 9.8, "year": 2014 },
+        { "qualification": "12th", "score": 94, "year": 2016 },
+        { "qualification": "Degree", "score": 8.16, "year": 2019 },
+        { "qualification": "PG", "score": 0, "year": 0 }
+      ],
+      "governmentProof": [
+        { "idProofType": "Govt ID 1", "value": "340585341677", "verified": true },
+        { "idProofType": "Govt ID 2", "value": "KFXPS5230G", "verified": true }
+      ]
+    },
+  {
+    "name": "Veeru Venkata Bhaskar Medidhi",
+    "duration":60,
+    "appliedDate": "2026-01-19",
+    "status":"completed",
+    "overallScore":42,
+    "totalScore":50,
+    "skills": ["Communication Skills", "Reasoning Ability", "Costing", "Accounting", "FP&A", "Excel (Advanced)"],
+    "experienceLevel":"entry",
+    "attemptedQuestions":50,
+      "email": "veeru.bhaskar28@gmail.com",
+    "invitedDate": "2026-01-19",
+    "submissionStatus": "Under review",
+    "categoryPercentage": {
+      "overallScore": 42,
+      "totalScore": 50,
+      "overallPercentage": 84,
+      "categoryWisePercentage": {
+        "Communication Skills": 50,
+        "Reasoning Ability": 90,
+        "Costing": 100,
+        "Accounting": 90,
+        "FP&A": 100,
+        "Excel (Advanced)": 83
+      }
+    },
+    "proctoringStatus": "No",
+    "region": "India",
+    "location": "Hyderabad",
+    "residenceLocation": null,
+    "resumeUrl": "https://aiclassmaster-bucket.s3.ap-south-1.amazonaws.com/talent/undefined/profile/0.8626511040604286_VEERA_VENKATA_BHASKAR_MEDIDHI-Resume.pdf",
+    "educations": [
+      { "qualification": "10th", "score": 91.67, "year": 2011 },
+      { "qualification": "12th", "score": 95.2, "year": 2013 },
+      { "qualification": "Degree", "score": 53, "year": 2025 },
+      { "qualification": "PG", "score": null, "year": null }
+    ],
+    "governmentProof": [
+      { "idProofType": "Govt ID 1", "value": "970359851544", "verified": true },
+      { "idProofType": "Govt ID 2", "value": "EWVPM4953F", "verified": true }
+    ]
+  }  
+]

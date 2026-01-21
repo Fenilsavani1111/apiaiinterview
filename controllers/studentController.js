@@ -1,4 +1,3 @@
-// apiaiinterview/controllers/studentController.js - USING EXISTING COLUMNS ONLY
 const { Op } = require('sequelize');
 const { StudentsWithJobPost } = require('../models');
 
@@ -10,9 +9,9 @@ const studentController = {
     try {
       const { students, jobPostId } = req.body;
 
-      console.log('📝 CREATE STUDENTS REQUEST:', { 
-        jobPostId, 
-        studentCount: students?.length 
+      console.log('📝 CREATE STUDENTS REQUEST:', {
+        jobPostId,
+        studentCount: students?.length
       });
 
       if (!jobPostId) {
@@ -104,14 +103,14 @@ const studentController = {
       console.log('📊 GET STUDENTS REQUEST:', { jobPostId });
 
       const students = await StudentsWithJobPost.findAll({
-        where: { 
+        where: {
           jobPostId: jobPostId
         },
         order: [['createdAt', 'DESC']],
         attributes: [
-          'id', 
-          'name', 
-          'email', 
+          'id',
+          'name',
+          'email',
           'mobile',
           'jobPostId',
           'status',
@@ -158,7 +157,7 @@ const studentController = {
 
       // Delete all students for this job post
       const deletedCount = await StudentsWithJobPost.destroy({
-        where: { 
+        where: {
           jobPostId: jobPostId
         }
       });
@@ -220,9 +219,9 @@ const studentController = {
       const { jobPostId } = req.params;
       const { students } = req.body;
 
-      console.log('🔄 UPDATE STUDENTS REQUEST:', { 
-        jobPostId, 
-        studentCount: students?.length 
+      console.log('🔄 UPDATE STUDENTS REQUEST:', {
+        jobPostId,
+        studentCount: students?.length
       });
 
       if (!students || !Array.isArray(students)) {
@@ -234,7 +233,7 @@ const studentController = {
 
       // Delete existing students for this job
       await StudentsWithJobPost.destroy({
-        where: { 
+        where: {
           jobPostId: jobPostId
         }
       });
@@ -298,7 +297,7 @@ const studentController = {
       const { jobPostId } = req.params;
 
       const count = await StudentsWithJobPost.count({
-        where: { 
+        where: {
           jobPostId: jobPostId
         }
       });

@@ -1,32 +1,24 @@
-// apiaiinterview/routes/jobPost.js 
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const jobPostController = require("../controllers/jobPostController");
-const uploadFileController = require("../controllers/uploadFileController");
-// const resumeParserController = require("../controllers/resumeParserController");
-const authMiddleware = require("../middlewares/auth");
+const jobPostController = require('../controllers/jobPostController');
+const uploadFileController = require('../controllers/uploadFileController');
+const authMiddleware = require('../middlewares/auth');
 
-// Inline admin guard: ensure this is a function even if the admin file is missing or empty
-
-const multer = require("multer");
-const path = require("path");
+const multer = require('multer');
+const path = require('path');
 
 // ============================================
-// MULTER CONFIGURATION FOR VIDEO UPLOADS
+// MULTER CONFIGURATION
 // ============================================
 
-// Configure storage for videos
 const storagevideo = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads")); // uploads folder
+    cb(null, path.join(__dirname, '../uploads'));
   },
   filename: (req, file, cb) => {
-    console.log("-------", req.body);
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    const safeBaseName = path
-      .basename(file.originalname, ext)
-      .replace(/\s+/g, "_");
+    const safeBaseName = path.basename(file.originalname, ext).replace(/\s+/g, '_');
     const filename = `${safeBaseName}-${uniqueSuffix}.webm`;
 
     cb(null, filename);
@@ -39,147 +31,65 @@ const uploadvideo = multer({ storage: storagevideo });
 const storage = new multer.memoryStorage();
 const upload = multer({ storage });
 
-// ============================================
-// PUBLIC ROUTES (No authentication required)
-// ============================================
+/* ======================================================
+   ✅ PUBLIC ROUTES (NO AUTH)
+====================================================== */
 
-// Get all job posts (Public)
-router.get("/", jobPostController.getAllJobPosts);
+// Job browsing
+router.get('/', authMiddleware, jobPostController.getAllJobPosts);
+router.get('/:id', authMiddleware, jobPostController.getJobPostById);
 
-// Get job post by ID (Public)
-router.get("/:id", jobPostController.getJobPostById);
-
-// ============================================
-// JOB SHARING & EMAIL ROUTES (Public)
-// ============================================
-
-// Send job link via email (Public)
-router.post("/send-job-link", jobPostController.linkShareJobPost);
-
-// Send student/candidate exam link via email (Public)
-router.post("/send-student-exam-link", jobPostController.sendStudentExamLink);
-
-// Generate token for job interview link (Public)
+// Job sharing & email
+router.post('/send-job-link', authMiddleware, jobPostController.linkShareJobPost);
+router.post('/send-student-exam-link', authMiddleware, jobPostController.sendStudentExamLink);
 router.post(
-  "/generate-job-token",
+  '/generate-job-token',
+  authMiddleware,
   jobPostController.generateTokenForJobInterviewLink
 );
+router.post('/get-jobpost-by-token', jobPostController.getJobpostbyToken);
 
-// Get job post by token (Public)
-router.post("/get-jobpost-by-token", jobPostController.getJobpostbyToken);
+// Interview access
+router.post('/verify-email-for-interview', jobPostController.verifyEmailForInterview);
+router.post('/join-job-link', jobPostController.joinJobPostWithToken);
 
-// ============================================
-// INTERVIEW ACCESS ROUTES (Public - With Email Verification)
-// ============================================
+// Candidate interview
+router.post('/update-candidate-byid', jobPostController.updateStudentWithJobpostById);
+router.get('/get-candidate-byid/:id', jobPostController.getCandidateById);
+router.post('/behavioral-analysis', jobPostController.getBehavioralAnalysis);
 
-// NEW: Verify email before allowing interview access
-router.post(
-  "/verify-email-for-interview",
-  jobPostController.verifyEmailForInterview
-);
+// Candidate uploads
+router.post('/upload-interview-video', uploadvideo.single('video'), (req, res) => {
+  console.log(req.file, 'file Name:', req.body.fileName);
 
-// Join interview with token (requires email verification)
-router.post("/join-job-link", jobPostController.joinJobPostWithToken);
+  console.time('Video Upload');
+  if (!req.file) return res.status(400).send('No file uploaded.');
+  console.timeEnd('Video Upload');
 
-// ============================================
-// CANDIDATE INTERVIEW ROUTES (Public)
-// ============================================
+  console.log('✅ File saved to disk:', req.file.path);
 
-// Update candidate interview details by ID
-router.post(
-  "/update-candidate-byid",
-  jobPostController.updateStudentWithJobpostById
-);
+  // Prepare the response data
+  const responseData = {
+    message: 'Video uploaded successfully',
+    fileName: req.file.filename,
+    path: `uploads/${req.file.filename}`,
+  };
 
-// Behavioral analysis endpoint (local - replaces external API)
-router.post(
-  "/behavioral-analysis",
-  jobPostController.getBehavioralAnalysis
-);
+  // Set content type and end the response with JSON
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(responseData));
+});
 
-// Get candidate interview details by ID
-router.get("/get-candidate-byid/:id", jobPostController.getCandidateById);
+router.post('/upload-resume', upload.single('file'), uploadFileController.UploadResume);
 
-// ============================================
-// FILE UPLOAD ROUTES (Public - For Candidates)
-// ============================================
+// Job management
+router.post('/', authMiddleware, jobPostController.createJobPost);
+router.put('/:id', authMiddleware, jobPostController.updateJobPost);
+router.delete('/:id', authMiddleware, jobPostController.deleteJobPost);
 
-// Video upload for interviews (public - for candidates)
-router.post(
-  "/upload-interview-video",
-  uploadvideo.single("video"),
-  (req, res) => {
-    console.log(req.file, "file Name:", req.body.fileName);
-
-    console.time("Video Upload");
-    if (!req.file) return res.status(400).send("No file uploaded.");
-    console.timeEnd("Video Upload");
-
-    console.log("✅ File saved to disk:", req.file.path);
-
-    // Prepare the response data
-    const responseData = {
-      message: "Video uploaded successfully",
-      fileName: req.file.filename,
-      path: `uploads/${req.file.filename}`,
-    };
-
-    // Set content type and end the response with JSON
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(responseData));
-  }
-);
-
-// Resume/file upload (public - for candidates)
-router.post(
-  "/upload-resume",
-  upload.single("file"),
-  uploadFileController.UploadResume
-);
-
-// Resume parser (optional - commented out)
-// router.post(
-//   "/resume-parser",
-//   upload.single("file"),
-//   resumeParserController.getResumeParser
-// );
-
-// ============================================
-// PROTECTED ADMIN ROUTES (Require admin authentication)
-// ============================================
-
-// Create job post (Admin only)
-router.post("/", authMiddleware, jobPostController.createJobPost);
-
-// Update job post (Admin only)
-router.put("/:id", authMiddleware, jobPostController.updateJobPost);
-
-// Delete job post (Admin only)
-router.delete("/:id", authMiddleware, jobPostController.deleteJobPost);
-
-// ============================================
-// ADMIN DASHBOARD ROUTES (Require admin authentication)
-// ============================================
-
-// Get admin dashboard data (Admin only)
-router.post(
-  "/get-admin-dashboard",
-  authMiddleware,
-  jobPostController.getAdminDashbord
-);
-
-// Get analytics dashboard data (Admin only)
-router.post(
-  "/get-analytics-dashboard",
-  authMiddleware,
-  jobPostController.getAnalyticsDashboard
-);
-
-// Get recent candidates (Admin only)
-router.post(
-  "/get-recent-candidates",
-  authMiddleware,
-  jobPostController.getRecentCandidates
-);
+// Admin dashboards
+router.post('/get-admin-dashboard', authMiddleware, jobPostController.getAdminDashbord);
+router.post('/get-analytics-dashboard', authMiddleware, jobPostController.getAnalyticsDashboard);
+router.post('/get-recent-candidates', authMiddleware, jobPostController.getRecentCandidates);
 
 module.exports = router;

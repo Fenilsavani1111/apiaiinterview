@@ -28,6 +28,7 @@ const {
 } = require('date-fns');
 const { getPercentage } = require('../utils/helper');
 const SECRET = process.env.LINK_TOKEN_SECRET || 'your-very-secret-key';
+const studentsData = require('../data/studentsWithJobPostData.json');
 
 // Helper to include all nested data
 const fullInclude = [
@@ -77,18 +78,18 @@ const transformJobPostForFrontend = (jobPost) => {
     location: Array.isArray(jobPost.location)
       ? jobPost.location
       : jobPost.location
-      ? [jobPost.location]
-      : [],
+        ? [jobPost.location]
+        : [],
     type: jobPost.jobType,
     experience: jobPost.experienceLevel,
     description: jobPost.jobDescription,
     salary:
       jobPost.salaryMin && jobPost.salaryMax
         ? {
-            min: jobPost.salaryMin,
-            max: jobPost.salaryMax,
-            currency: jobPost.salaryCurrency,
-          }
+          min: jobPost.salaryMin,
+          max: jobPost.salaryMax,
+          currency: jobPost.salaryCurrency,
+        }
         : undefined,
     requirements: jobPost.requirements?.map((r) => r.requirement) || [],
     responsibilities:
@@ -147,6 +148,7 @@ exports.createJobPost = async (req, res) => {
       students = [],
       enableVideoRecording = false,
     } = req.body;
+    const userId = req.user?.id;
 
     if (
       !title ||
@@ -156,7 +158,6 @@ exports.createJobPost = async (req, res) => {
       !type ||
       !experience ||
       !description ||
-      !salary ||
       !requirements ||
       !responsibilities ||
       !skills ||
@@ -178,6 +179,7 @@ exports.createJobPost = async (req, res) => {
       status: status,
       createdBy: createdBy || 'admin',
       enableVideoRecording: enableVideoRecording || false,
+      userId: userId,
     };
 
     const jobPost = await JobPost.create(jobPostData, { transaction: t });
@@ -287,8 +289,31 @@ exports.createJobPost = async (req, res) => {
 
 // get all job posts
 exports.getAllJobPosts = async (req, res) => {
+  const userId = req.user?.id;
+  // console.log("studentsData", studentsData?.length)
+  // if (!Array.isArray(studentsData)) {
+  //   throw new Error("studentsData must be an array");
+  // }
+
+  // try {
+  //   const payload = studentsData.map(s => ({
+  //     ...s,
+  //     jobPostId: 12
+  //   }));
+  //   const data = await StudentsWithJobPost.bulkCreate(payload, {
+  //     validate: true,
+  //     returning: true, // IMPORTANT for Postgres
+  //   });
+  //   console.log("Inserted:", data.length);
+  // } catch (error) {
+  //   console.error("Sequelize error message:", error.message);
+  //   console.error("Postgres error:", error.parent);   // 👈 REAL DB ERROR
+  //   console.error("Validation errors:", error.errors);
+  // }
+
   try {
     const posts = await JobPost.findAll({
+      where: { userId: userId },
       include: fullInclude,
       order: [['createdAt', 'DESC']],
     });
@@ -852,10 +877,11 @@ exports.generateTokenForJobInterviewLink = async (req, res) => {
 exports.getRecentCandidates = async (req, res) => {
   const t = await sequelize.transaction();
   try {
+    const userId = req.user?.id;
     const candidates = await StudentsWithJobPost.findAll({
       order: [['createdAt', 'DESC']],
       limit: 5,
-      include: [{ model: JobPost, as: 'JobPost' }],
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     return res.status(200).json({ candidates: candidates });
   } catch (err) {
@@ -959,9 +985,10 @@ exports.getCandidateById = async (req, res) => {
 // get admin dashboard
 exports.getAdminDashbord = async (req, res) => {
   try {
+    const userId = req.user?.id;
     const candidates = await StudentsWithJobPost.findAll({
       order: [['createdAt', 'DESC']],
-      include: [{ model: JobPost, as: 'JobPost' }],
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const total_interview = await StudentsWithJobPost.count({
       where: {
@@ -969,6 +996,7 @@ exports.getAdminDashbord = async (req, res) => {
           [Op.ne]: null,
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const currentWeekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -979,6 +1007,7 @@ exports.getAdminDashbord = async (req, res) => {
           [Op.between]: [currentWeekStart, currentWeekEnd],
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const previousWeekStart = startOfWeek(subWeeks(new Date(), 1), {
       weekStartsOn: 1,
@@ -993,15 +1022,18 @@ exports.getAdminDashbord = async (req, res) => {
           [Op.between]: [previousWeekStart, previousWeekEnd],
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     let interview_weekly_growth = getPercentage(
       prev_week_interview,
       curr_week_interview
     );
-    const jobs = await JobPost.findAll();
+    const jobs = await JobPost.findAll({ where: { userId: userId } });
     let active_jobs = jobs.filter((v) => v?.status === 'draft')?.length;
     let inactive_jobs = jobs.filter((v) => v?.status !== 'draft')?.length;
-    const total_candidates = await StudentsWithJobPost.count({});
+    const total_candidates = await StudentsWithJobPost.count({
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
+    });
     const currentMonthStart = startOfMonth(new Date());
     const currentMonthEnd = endOfMonth(new Date());
     const curr_month_total_candidates = await StudentsWithJobPost.count({
@@ -1010,6 +1042,7 @@ exports.getAdminDashbord = async (req, res) => {
           [Op.between]: [currentMonthStart, currentMonthEnd],
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const prevMonthStart = startOfMonth(subMonths(new Date(), 1));
     const prevMonthEnd = endOfMonth(subMonths(new Date(), 1));
@@ -1019,6 +1052,7 @@ exports.getAdminDashbord = async (req, res) => {
           [Op.between]: [prevMonthStart, prevMonthEnd],
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     let candidate_monthly_growth = getPercentage(
       prev_month_total_candidates,
@@ -1064,13 +1098,14 @@ for (let i = 6; i >= 0; i--) {
 // GET analytics dashboard
 exports.getAnalyticsDashboard = async (req, res) => {
   try {
+    const userId = req.user?.id;
     const currentMonthStart = startOfMonth(new Date());
     const currentMonthEnd = endOfMonth(new Date());
     const prevMonthStart = startOfMonth(subMonths(new Date(), 1));
     const prevMonthEnd = endOfMonth(subMonths(new Date(), 1));
     const candidates = await StudentsWithJobPost.findAll({
       order: [['createdAt', 'DESC']],
-      include: [{ model: JobPost, as: 'JobPost' }],
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const total_interview = await StudentsWithJobPost.count({
       where: {
@@ -1078,6 +1113,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
           [Op.ne]: null,
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const curr_month_interview = await StudentsWithJobPost.findAll({
       where: {
@@ -1085,6 +1121,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
           [Op.between]: [currentMonthStart, currentMonthEnd],
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const prev_month_interview = await StudentsWithJobPost.findAll({
       where: {
@@ -1092,6 +1129,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
           [Op.between]: [prevMonthStart, prevMonthEnd],
         },
       },
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
     const interview_growth = getPercentage(
       prev_month_interview?.length ?? 0,
@@ -1143,6 +1181,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
       group: [fn('DATE_TRUNC', 'week', col('createdAt'))],
       order: [[fn('DATE_TRUNC', 'week', col('createdAt')), 'ASC']],
       raw: true,
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
 
     const last7weekdataMap = new Map(
@@ -1177,6 +1216,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
       group: [fn('DATE_TRUNC', 'month', col('interviewDate'))],
       order: [[fn('DATE_TRUNC', 'month', col('interviewDate')), 'ASC']],
       raw: true,
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
 
     const last7monthsinterviewMap = new Map(
@@ -1210,6 +1250,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
         },
       },
       raw: true,
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
 
     const skillKeys = [
@@ -1269,7 +1310,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
       },
       order: [['overallScore', 'DESC']],
       limit: 5,
-      include: [{ model: JobPost, as: 'JobPost' }],
+      include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
 
     return res.status(200).json({
@@ -1348,8 +1389,8 @@ exports.getBehavioralAnalysis = async (req, res) => {
           avgScore >= 7
             ? 'Demonstrated strong communication skills with clear and articulate responses.'
             : avgScore >= 5
-            ? 'Showed adequate communication skills with room for improvement in clarity.'
-            : 'Communication skills need development. Consider focusing on structured responses.',
+              ? 'Showed adequate communication skills with room for improvement in clarity.'
+              : 'Communication skills need development. Consider focusing on structured responses.',
       },
       technicalKnowledge: {
         overallAveragePercentage: Math.min(
@@ -1360,8 +1401,8 @@ exports.getBehavioralAnalysis = async (req, res) => {
           avgScore >= 7
             ? 'Exhibited solid technical knowledge and understanding of key concepts.'
             : avgScore >= 5
-            ? 'Displayed basic technical knowledge with some gaps in understanding.'
-            : 'Technical knowledge requires further development and study.',
+              ? 'Displayed basic technical knowledge with some gaps in understanding.'
+              : 'Technical knowledge requires further development and study.',
       },
       confidenceLevel: {
         overallAveragePercentage: Math.min(
@@ -1372,8 +1413,8 @@ exports.getBehavioralAnalysis = async (req, res) => {
           avgScore >= 7
             ? 'Displayed high confidence in responses and knowledge.'
             : avgScore >= 5
-            ? 'Showed moderate confidence with some hesitation.'
-            : 'Confidence level needs improvement. Consider more preparation.',
+              ? 'Showed moderate confidence with some hesitation.'
+              : 'Confidence level needs improvement. Consider more preparation.',
       },
       problemSolving: {
         overallAveragePercentage: Math.min(
@@ -1384,8 +1425,8 @@ exports.getBehavioralAnalysis = async (req, res) => {
           avgScore >= 7
             ? 'Demonstrated strong problem-solving abilities.'
             : avgScore >= 5
-            ? 'Showed basic problem-solving skills.'
-            : 'Problem-solving skills need enhancement.',
+              ? 'Showed basic problem-solving skills.'
+              : 'Problem-solving skills need enhancement.',
       },
       leadershipPotential: {
         overallAveragePercentage: Math.min(
@@ -1396,8 +1437,8 @@ exports.getBehavioralAnalysis = async (req, res) => {
           avgScore >= 7
             ? 'Exhibited leadership qualities in responses.'
             : avgScore >= 5
-            ? 'Showed potential for leadership development.'
-            : 'Leadership potential requires further assessment.',
+              ? 'Showed potential for leadership development.'
+              : 'Leadership potential requires further assessment.',
       },
       body_language: {
         overallAveragePercentage: video_url ? 75 : 0, // Placeholder - would require video analysis
@@ -1411,28 +1452,25 @@ exports.getBehavioralAnalysis = async (req, res) => {
     const aiEvaluationSummary = {
       summary:
         avgScore >= 7
-          ? `The candidate demonstrated strong performance across ${
-              questionsWithAnswer.length
-            } questions with an average score of ${avgScore.toFixed(
-              1
-            )}/10. Responses were detailed and showed good understanding of the subject matter.`
+          ? `The candidate demonstrated strong performance across ${questionsWithAnswer.length
+          } questions with an average score of ${avgScore.toFixed(
+            1
+          )}/10. Responses were detailed and showed good understanding of the subject matter.`
           : avgScore >= 5
-          ? `The candidate showed moderate performance with an average score of ${avgScore.toFixed(
+            ? `The candidate showed moderate performance with an average score of ${avgScore.toFixed(
               1
-            )}/10 across ${
-              questionsWithAnswer.length
+            )}/10 across ${questionsWithAnswer.length
             } questions. Some areas showed promise while others need improvement.`
-          : `The candidate's performance indicates areas for significant improvement. Average score was ${avgScore.toFixed(
+            : `The candidate's performance indicates areas for significant improvement. Average score was ${avgScore.toFixed(
               1
-            )}/10 across ${
-              questionsWithAnswer.length
+            )}/10 across ${questionsWithAnswer.length
             } questions. Additional preparation and study would be beneficial.`,
       keyStrengths: [
         avgScore >= 7
           ? 'Strong technical knowledge'
           : avgScore >= 5
-          ? 'Basic understanding demonstrated'
-          : 'Willingness to participate',
+            ? 'Basic understanding demonstrated'
+            : 'Willingness to participate',
         avgAnswerLength > 50
           ? 'Detailed and comprehensive responses'
           : 'Concise communication style',
@@ -1457,10 +1495,10 @@ exports.getBehavioralAnalysis = async (req, res) => {
     const video_analysis_insights = {
       positive_indicators: video_url
         ? [
-            'Video recording completed successfully',
-            'Interview session captured for review',
-            `Average response time: ${avgResponseTime.toFixed(1)} seconds`,
-          ]
+          'Video recording completed successfully',
+          'Interview session captured for review',
+          `Average response time: ${avgResponseTime.toFixed(1)} seconds`,
+        ]
         : [],
       areas_for_improvement: [
         avgScore < 7
@@ -1496,18 +1534,18 @@ exports.getBehavioralAnalysis = async (req, res) => {
         avgScore >= 7
           ? 'Highly Recommended'
           : avgScore >= 5
-          ? 'Recommended'
-          : 'Consider with reservations',
+            ? 'Recommended'
+            : 'Consider with reservations',
       summary:
         avgScore >= 7
           ? `Strong performance with average score of ${avgScore.toFixed(
-              1
-            )}/10. Candidate demonstrates good understanding and communication skills.`
+            1
+          )}/10. Candidate demonstrates good understanding and communication skills.`
           : avgScore >= 5
-          ? `Moderate performance with average score of ${avgScore.toFixed(
+            ? `Moderate performance with average score of ${avgScore.toFixed(
               1
             )}/10. Candidate shows potential but may need additional training.`
-          : `Performance below expectations with average score of ${avgScore.toFixed(
+            : `Performance below expectations with average score of ${avgScore.toFixed(
               1
             )}/10. Consider additional assessment or training before proceeding.`,
     };

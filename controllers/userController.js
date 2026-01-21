@@ -1,8 +1,7 @@
-// apiaiinterview/controllers/userController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const User = require('../models/User');
+const { User } = require('../models');
 
 // Generate JWT token (only access token, stored in localStorage on client)
 const generateToken = (user) => {
@@ -203,8 +202,8 @@ const userController = {
       const queryOptions = {
         attributes: [
           'id',
-          'email', 
-          'name', 
+          'email',
+          'name',
           'phoneNumber',
           'createdAt',
           'updatedAt'
@@ -219,7 +218,7 @@ const userController = {
       if (searchParam !== undefined && searchParam !== null && searchParam.toString().trim() !== '') {
         const searchTerm = searchParam.toString().trim();
         console.log(`🔍 Search filter active: "${searchTerm}"`);
-        
+
         queryOptions.where = {
           [Op.or]: [
             { email: { [Op.iLike]: `%${searchTerm}%` } },
@@ -231,10 +230,10 @@ const userController = {
       }
 
       console.log('🚀 Executing Sequelize query...');
-      
+
       // Execute the query
       const { count, rows } = await User.findAndCountAll(queryOptions);
-      
+
       console.log(`✅ Query successful!`);
       console.log(`📊 Total users in DB: ${count}`);
       console.log(`📦 Users returned in this page: ${rows.length}`);
