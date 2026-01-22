@@ -897,59 +897,64 @@ exports.getRecentCandidates = async (req, res) => {
 // update candidate interview details by id
 exports.updateStudentWithJobpostById = async (req, res) => {
   const t = await sequelize.transaction();
+
   try {
-    let { candidateId, data } = req?.body;
+    let { candidateId, data } = req.body;
     let questions = data?.questions ?? [];
-    delete data?.questions;
+    delete data.questions;
 
     const candidate = await StudentsWithJobPost.findOne({
       where: { id: candidateId },
+      transaction: t,
     });
 
     if (!candidate) {
-      return res.status(404).json({ error: 'Candidate not found' });
+      await t.rollback();
+      return res.status(404).json({ error: "Candidate not found" });
     }
 
-    let deletedQues = await StudentInterviewAnswer.destroy({
-      where: {
-        studentId: candidateId,
-      },
+    const deletedQues = await StudentInterviewAnswer.destroy({
+      where: { studentId: candidateId },
       transaction: t,
     });
 
     await StudentsWithJobPost.update(
       { ...data },
-      { where: { id: candidateId } },
-      { transaction: t }
+      { where: { id: candidateId }, transaction: t } // ✅ transaction goes inside same object
     );
 
     if (deletedQues === 0) {
-      await JobPost.increment('interviews', {
+      await JobPost.increment("interviews", {
         by: 1,
-        where: { id: candidate?.jobPostId },
+        where: { id: candidate.jobPostId },
         transaction: t,
       });
     }
 
-    await t.commit();
-
-    await sequelize.transaction(async (t) => {
-      await StudentInterviewAnswer.bulkCreate([...questions], {
+    if (questions.length > 0) {
+      await StudentInterviewAnswer.bulkCreate(questions, {
         transaction: t,
       });
+    }
+
+    const updated = await StudentsWithJobPost.findByPk(candidateId, {
+      transaction: t,
     });
 
-    const updated = await StudentsWithJobPost.findByPk(candidateId);
+    await t.commit();
+
     return res.status(200).json({
-      message: 'Candidate details updated successfully',
+      message: "Candidate details updated successfully",
       candidate: updated,
     });
   } catch (err) {
     await t.rollback();
-    console.log('err Failed to update student with jobpost by id', err);
-    return res
-      .status(400)
-      .json({ error: 'Update failed', details: err.message });
+    console.log("err Failed to update student with jobpost by id", err);
+
+    return res.status(400).json({
+      error: "Update failed",
+      details: err.message,
+    });
   }
 };
 
