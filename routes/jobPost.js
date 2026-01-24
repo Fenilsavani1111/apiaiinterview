@@ -37,6 +37,7 @@ const upload = multer({ storage });
 
 // Job browsing
 router.get('/', authMiddleware, jobPostController.getAllJobPosts);
+router.get('/performance-comparison', authMiddleware, jobPostController.getPerformanceComparison);
 router.get('/:id', authMiddleware, jobPostController.getJobPostById);
 
 // Job sharing & email

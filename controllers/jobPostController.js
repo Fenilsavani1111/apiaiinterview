@@ -7,13 +7,10 @@ const {
   InterviewAnswerPoint,
   sequelize,
   StudentsWithJobPost,
-  StudentInterviewAnswer
+  StudentInterviewAnswer,
 } = require('../models');
 const jwt = require('jsonwebtoken');
-const {
-  sendJobLinkEmail,
-  sendStudentExamEmail,
-} = require('../utils/mailService');
+const { sendJobLinkEmail, sendStudentExamEmail } = require('../utils/mailService');
 const { Op, fn, col, literal } = require('sequelize');
 const {
   startOfWeek,
@@ -86,14 +83,13 @@ const transformJobPostForFrontend = (jobPost) => {
     salary:
       jobPost.salaryMin && jobPost.salaryMax
         ? {
-          min: jobPost.salaryMin,
-          max: jobPost.salaryMax,
-          currency: jobPost.salaryCurrency,
-        }
+            min: jobPost.salaryMin,
+            max: jobPost.salaryMax,
+            currency: jobPost.salaryCurrency,
+          }
         : undefined,
     requirements: jobPost.requirements?.map((r) => r.requirement) || [],
-    responsibilities:
-      jobPost.responsibilities?.map((r) => r.responsibility) || [],
+    responsibilities: jobPost.responsibilities?.map((r) => r.responsibility) || [],
     skills: jobPost.skills?.map((s) => s.skill) || [],
     questions:
       jobPost.interviewQuestions?.map((q) => ({
@@ -103,8 +99,7 @@ const transformJobPostForFrontend = (jobPost) => {
         difficulty: q.difficulty,
         expectedDuration: q.duration,
         category: q.category,
-        suggestedAnswers:
-          q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
+        suggestedAnswers: q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
         options: Array.isArray(q.options) ? q.options : [],
         rightAnswer: q.rightAnswer || null,
         isRequired: true,
@@ -259,9 +254,7 @@ exports.createJobPost = async (req, res) => {
     }
 
     if (students && students.length > 0) {
-      console.log(
-        `📝 Creating ${students.length} students for job ${jobPost.id}`
-      );
+      console.log(`📝 Creating ${students.length} students for job ${jobPost.id}`);
       await StudentsWithJobPost.bulkCreate(
         students.map((student) => ({
           name: student.name,
@@ -319,9 +312,7 @@ exports.getAllJobPosts = async (req, res) => {
     });
 
     let damiposts = posts.map(transformJobPostForFrontend);
-    damiposts = damiposts.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
+    damiposts = damiposts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     return res.status(200).json(damiposts);
   } catch (err) {
     console.log('err Failed to fetch jobpost', err);
@@ -519,9 +510,7 @@ exports.linkShareJobPost = async (req, res) => {
   } catch (err) {
     await t.rollback();
     console.log('err Failed to send job link email', err);
-    return res
-      .status(500)
-      .json({ error: 'Failed to send job link email', details: err.message });
+    return res.status(500).json({ error: 'Failed to send job link email', details: err.message });
   }
 };
 
@@ -688,9 +677,7 @@ exports.getJobpostbyToken = async (req, res) => {
     });
   } catch (err) {
     console.log('err Failed to get job post by token', err);
-    return res
-      .status(500)
-      .json({ error: 'Failed to get job post by token', details: err.message });
+    return res.status(500).json({ error: 'Failed to get job post by token', details: err.message });
   }
 };
 
@@ -719,9 +706,7 @@ exports.joinJobPostWithToken = async (req, res) => {
         {
           model: InterviewQuestion,
           as: 'interviewQuestions',
-          include: [
-            { model: InterviewAnswerPoint, as: 'suggestedAnswerPoints' },
-          ],
+          include: [{ model: InterviewAnswerPoint, as: 'suggestedAnswerPoints' }],
         },
       ],
     });
@@ -754,8 +739,6 @@ exports.joinJobPostWithToken = async (req, res) => {
 
     // Extract other data from request
     const {
-      firstName,
-      lastName,
       name,
       resumeUrl,
       mobile,
@@ -764,34 +747,30 @@ exports.joinJobPostWithToken = async (req, res) => {
       educations,
       location,
       skills,
+      region,
+      residenceLocation,
     } = req.body;
 
-    // Construct full name from firstName and lastName if provided
-    const fullName =
-      firstName && lastName
-        ? `${firstName} ${lastName}`
-        : name || allowedStudent.name;
+    const fullName = name || allowedStudent.name;
 
     // Use educations array from request, or keep existing if not provided
     const educationsArray =
-      educations && Array.isArray(educations)
-        ? educations
-        : allowedStudent.educations || [];
+      educations && Array.isArray(educations) ? educations : allowedStudent.educations || [];
 
     // Update student record with additional info
     await allowedStudent.update(
       {
-        firstName: firstName || allowedStudent.firstName,
-        lastName: lastName || allowedStudent.lastName,
+        name: name || allowedStudent.name,
         name: fullName,
         resumeUrl: resumeUrl || allowedStudent.resumeUrl,
         mobile: mobile || allowedStudent.mobile,
         dob: dob || allowedStudent.dob,
-        highestQualification:
-          highestQualification || allowedStudent.highestQualification,
+        highestQualification: highestQualification || allowedStudent.highestQualification,
         educations: educationsArray,
         location: location || allowedStudent.location,
         skills: skills && skills.length > 0 ? skills : allowedStudent.skills,
+        region: region || allowedStudent.region,
+        residenceLocation: residenceLocation || allowedStudent.residenceLocation,
         status: 'inprogress',
       },
       { transaction: t }
@@ -811,8 +790,7 @@ exports.joinJobPostWithToken = async (req, res) => {
         difficulty: q.difficulty,
         expectedDuration: q.duration,
         category: q.category,
-        suggestedAnswers:
-          q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
+        suggestedAnswers: q.suggestedAnswerPoints?.map((ap) => ap.answerPoint) || [],
         options: Array.isArray(q.options) ? q.options : [],
         rightAnswer: q.rightAnswer || null,
         isRequired: true,
@@ -861,9 +839,7 @@ exports.generateTokenForJobInterviewLink = async (req, res) => {
     }
     // Generate token with 30 days validity
     const token = jwt.sign({ jobId }, SECRET, { expiresIn: '30d' });
-    return res
-      .status(200)
-      .json({ token: token, message: 'Token generated successfully' });
+    return res.status(200).json({ token: token, message: 'Token generated successfully' });
   } catch (err) {
     console.log('err Failed to generate token for job interview link', err);
     return res.status(500).json({
@@ -910,7 +886,7 @@ exports.updateStudentWithJobpostById = async (req, res) => {
 
     if (!candidate) {
       await t.rollback();
-      return res.status(404).json({ error: "Candidate not found" });
+      return res.status(404).json({ error: 'Candidate not found' });
     }
 
     const deletedQues = await StudentInterviewAnswer.destroy({
@@ -924,7 +900,7 @@ exports.updateStudentWithJobpostById = async (req, res) => {
     );
 
     if (deletedQues === 0) {
-      await JobPost.increment("interviews", {
+      await JobPost.increment('interviews', {
         by: 1,
         where: { id: candidate.jobPostId },
         transaction: t,
@@ -944,15 +920,15 @@ exports.updateStudentWithJobpostById = async (req, res) => {
     await t.commit();
 
     return res.status(200).json({
-      message: "Candidate details updated successfully",
+      message: 'Candidate details updated successfully',
       candidate: updated,
     });
   } catch (err) {
     await t.rollback();
-    console.log("err Failed to update student with jobpost by id", err);
+    console.log('err Failed to update student with jobpost by id', err);
 
     return res.status(400).json({
-      error: "Update failed",
+      error: 'Update failed',
       details: err.message,
     });
   }
@@ -976,14 +952,149 @@ exports.getCandidateById = async (req, res) => {
         },
       ],
     });
-    if (!candidate)
-      return res.status(404).json({ error: 'Candidate not found' });
+    if (!candidate) return res.status(404).json({ error: 'Candidate not found' });
     return res.status(200).json({
       candidate: candidate,
     });
   } catch (err) {
     console.log('err Failed to get candidate by id', err);
     return res.status(500).json({ error: err.message });
+  }
+};
+
+// GET performance comparison data
+exports.getPerformanceComparison = async (req, res) => {
+  try {
+    const { jobPostId } = req.query;
+    const userId = req.user?.id;
+
+    let whereClause = {
+      status: {
+        [Op.in]: ['completed', 'under_review'],
+      },
+      interviewDate: {
+        [Op.ne]: null,
+      },
+    };
+
+    // If jobPostId is provided, filter by that job post, otherwise get all for the user
+    if (jobPostId) {
+      whereClause.jobPostId = jobPostId;
+    } else if (userId) {
+      // Get all job posts for this user
+      const userJobPosts = await JobPost.findAll({
+        where: { userId: userId },
+        attributes: ['id'],
+      });
+      const jobPostIds = userJobPosts.map((job) => job.id);
+
+      if (jobPostIds.length > 0) {
+        whereClause.jobPostId = {
+          [Op.in]: jobPostIds,
+        };
+      } else {
+        // No job posts found for this user
+        return res.json({
+          averageScores: {},
+          totalCandidates: 0,
+          message: 'No candidates found',
+        });
+      }
+    }
+
+    console.log('Performance comparison where clause:', JSON.stringify(whereClause, null, 2));
+
+    const candidates = await StudentsWithJobPost.findAll({
+      where: whereClause,
+      attributes: [
+        'totalScore',
+        'overallScore',
+        'scores',
+        'performanceBreakdown',
+        'categoryPercentage',
+      ],
+    });
+
+    console.log(`Found ${candidates.length} candidates for performance comparison`);
+
+    if (candidates.length === 0) {
+      return res.json({
+        averageScores: {},
+        totalCandidates: 0,
+        message: 'No completed or under review interviews found',
+        debugInfo: {
+          whereClause,
+          userId,
+          jobPostId,
+        },
+      });
+    }
+
+    // Calculate averages for different skill categories
+    const averageScores = {};
+    const skillCategories = [
+      'communicationSkills',
+      'technicalKnowledge',
+      'problemSolving',
+      'leadershipPotential',
+      'confidenceLevel',
+    ];
+
+    skillCategories.forEach((skill) => {
+      const skillScores = candidates
+        .filter(
+          (candidate) =>
+            candidate.performanceBreakdown &&
+            candidate.performanceBreakdown[skill] &&
+            candidate.performanceBreakdown[skill].overallAveragePercentage
+        )
+        .map((candidate) => candidate.performanceBreakdown[skill].overallAveragePercentage);
+
+      if (skillScores.length > 0) {
+        averageScores[skill] = Math.round(
+          skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length
+        );
+      } else {
+        averageScores[skill] = 0;
+      }
+    });
+
+    // Calculate overall score averages
+    const totalScores = candidates
+      .filter((candidate) => candidate.totalScore)
+      .map((candidate) => candidate.totalScore);
+
+    const overallScores = candidates
+      .filter((candidate) => candidate.overallScore)
+      .map((candidate) => candidate.overallScore);
+
+    if (totalScores.length > 0) {
+      averageScores.totalScore = Math.round(
+        totalScores.reduce((sum, score) => sum + score, 0) / totalScores.length
+      );
+    }
+
+    if (overallScores.length > 0) {
+      averageScores.overallScore = Math.round(
+        overallScores.reduce((sum, score) => sum + score, 0) / overallScores.length
+      );
+    }
+
+    console.log('Performance comparison averages:', averageScores);
+
+    res.json({
+      averageScores,
+      totalCandidates: candidates.length,
+      message: 'Performance comparison data retrieved successfully',
+      debugInfo: {
+        skillCategories,
+        candidatesFound: candidates.length,
+        whereClause,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching performance comparison:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -1029,10 +1140,7 @@ exports.getAdminDashbord = async (req, res) => {
       },
       include: [{ model: JobPost, as: 'JobPost', required: true, where: { userId: userId } }],
     });
-    let interview_weekly_growth = getPercentage(
-      prev_week_interview,
-      curr_week_interview
-    );
+    let interview_weekly_growth = getPercentage(prev_week_interview, curr_week_interview);
     const jobs = await JobPost.findAll({ where: { userId: userId } });
     let active_jobs = jobs.filter((v) => v?.status === 'draft')?.length;
     let inactive_jobs = jobs.filter((v) => v?.status !== 'draft')?.length;
@@ -1066,10 +1174,7 @@ exports.getAdminDashbord = async (req, res) => {
     const recentCandidates = candidates
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 5);
-    const candidateScore = candidates.reduce(
-      (sum, item) => sum + item.totalScore,
-      0
-    );
+    const candidateScore = candidates.reduce((sum, item) => sum + item.totalScore, 0);
     return res.status(200).json({
       recentCandidates: recentCandidates,
       candidates: candidates,
@@ -1081,8 +1186,7 @@ exports.getAdminDashbord = async (req, res) => {
         inactive_jobs: inactive_jobs ?? 0,
         total_candidates: total_candidates ?? 0,
         candidate_monthly_growth: candidate_monthly_growth,
-        average_score:
-          candidateScore.length > 0 ? candidateScore / candidates.length : 0,
+        average_score: candidateScore.length > 0 ? candidateScore / candidates.length : 0,
       },
     });
   } catch (err) {
@@ -1141,10 +1245,7 @@ exports.getAnalyticsDashboard = async (req, res) => {
       curr_month_interview?.length ?? 0
     );
 
-    const total_avg_score = candidates.reduce(
-      (sum, item) => sum + item.totalScore,
-      0
-    );
+    const total_avg_score = candidates.reduce((sum, item) => sum + item.totalScore, 0);
     const curr_month_avg_score = curr_month_interview.reduce(
       (sum, item) => sum + item.totalScore,
       0
@@ -1153,15 +1254,9 @@ exports.getAnalyticsDashboard = async (req, res) => {
       (sum, item) => sum + item.totalScore,
       0
     );
-    const score_growth = getPercentage(
-      prev_month_avg_score,
-      curr_month_avg_score
-    );
+    const score_growth = getPercentage(prev_month_avg_score, curr_month_avg_score);
 
-    const total_avg_duration = candidates.reduce(
-      (sum, item) => sum + item.duration,
-      0
-    );
+    const total_avg_duration = candidates.reduce((sum, item) => sum + item.duration, 0);
     const curr_month_avg_duration = curr_month_interview.reduce(
       (sum, item) => sum + item.duration,
       0
@@ -1293,14 +1388,8 @@ exports.getAnalyticsDashboard = async (req, res) => {
     });
 
     skillKeys.forEach((key) => {
-      let curr = skillTrends[key].current_month.reduce(
-        (acc, val) => acc + val,
-        0
-      );
-      let prev = skillTrends[key].previous_month.reduce(
-        (acc, val) => acc + val,
-        0
-      );
+      let curr = skillTrends[key].current_month.reduce((acc, val) => acc + val, 0);
+      let prev = skillTrends[key].previous_month.reduce((acc, val) => acc + val, 0);
       skillTrends[key].current_month = curr;
       skillTrends[key].growth = getPercentage(prev, curr);
       delete skillTrends[key]?.previous_month;
@@ -1359,10 +1448,7 @@ exports.getBehavioralAnalysis = async (req, res) => {
     }
 
     // Calculate average scores and response times
-    const totalScore = questionsWithAnswer.reduce(
-      (sum, q) => sum + (q.score || 0),
-      0
-    );
+    const totalScore = questionsWithAnswer.reduce((sum, q) => sum + (q.score || 0), 0);
     const avgScore = totalScore / questionsWithAnswer.length;
     const totalResponseTime = questionsWithAnswer.reduce(
       (sum, q) => sum + (q.responseTime || 0),
@@ -1371,25 +1457,17 @@ exports.getBehavioralAnalysis = async (req, res) => {
     const avgResponseTime = totalResponseTime / questionsWithAnswer.length;
 
     // Analyze answer lengths and quality
-    const answerLengths = questionsWithAnswer.map(
-      (q) => (q.userAnswer || '').length
-    );
-    const avgAnswerLength =
-      answerLengths.reduce((a, b) => a + b, 0) / answerLengths.length;
+    const answerLengths = questionsWithAnswer.map((q) => (q.userAnswer || '').length);
+    const avgAnswerLength = answerLengths.reduce((a, b) => a + b, 0) / answerLengths.length;
     const detailedAnswers = questionsWithAnswer.filter(
       (q) => (q.userAnswer || '').length > 50
     ).length;
-    const briefAnswers = questionsWithAnswer.filter(
-      (q) => (q.userAnswer || '').length < 30
-    ).length;
+    const briefAnswers = questionsWithAnswer.filter((q) => (q.userAnswer || '').length < 30).length;
 
     // Generate behavioral analysis based on interview performance
     const performanceBreakdown = {
       communicationSkills: {
-        overallAveragePercentage: Math.min(
-          100,
-          Math.max(0, (avgScore / 10) * 100)
-        ),
+        overallAveragePercentage: Math.min(100, Math.max(0, (avgScore / 10) * 100)),
         summary:
           avgScore >= 7
             ? 'Demonstrated strong communication skills with clear and articulate responses.'
@@ -1398,10 +1476,7 @@ exports.getBehavioralAnalysis = async (req, res) => {
               : 'Communication skills need development. Consider focusing on structured responses.',
       },
       technicalKnowledge: {
-        overallAveragePercentage: Math.min(
-          100,
-          Math.max(0, (avgScore / 10) * 100)
-        ),
+        overallAveragePercentage: Math.min(100, Math.max(0, (avgScore / 10) * 100)),
         summary:
           avgScore >= 7
             ? 'Exhibited solid technical knowledge and understanding of key concepts.'
@@ -1410,10 +1485,7 @@ exports.getBehavioralAnalysis = async (req, res) => {
               : 'Technical knowledge requires further development and study.',
       },
       confidenceLevel: {
-        overallAveragePercentage: Math.min(
-          100,
-          Math.max(0, (avgScore / 10) * 100)
-        ),
+        overallAveragePercentage: Math.min(100, Math.max(0, (avgScore / 10) * 100)),
         summary:
           avgScore >= 7
             ? 'Displayed high confidence in responses and knowledge.'
@@ -1422,10 +1494,7 @@ exports.getBehavioralAnalysis = async (req, res) => {
               : 'Confidence level needs improvement. Consider more preparation.',
       },
       problemSolving: {
-        overallAveragePercentage: Math.min(
-          100,
-          Math.max(0, (avgScore / 10) * 100)
-        ),
+        overallAveragePercentage: Math.min(100, Math.max(0, (avgScore / 10) * 100)),
         summary:
           avgScore >= 7
             ? 'Demonstrated strong problem-solving abilities.'
@@ -1434,10 +1503,7 @@ exports.getBehavioralAnalysis = async (req, res) => {
               : 'Problem-solving skills need enhancement.',
       },
       leadershipPotential: {
-        overallAveragePercentage: Math.min(
-          100,
-          Math.max(0, (avgScore / 10) * 100)
-        ),
+        overallAveragePercentage: Math.min(100, Math.max(0, (avgScore / 10) * 100)),
         summary:
           avgScore >= 7
             ? 'Exhibited leadership qualities in responses.'
@@ -1457,19 +1523,22 @@ exports.getBehavioralAnalysis = async (req, res) => {
     const aiEvaluationSummary = {
       summary:
         avgScore >= 7
-          ? `The candidate demonstrated strong performance across ${questionsWithAnswer.length
-          } questions with an average score of ${avgScore.toFixed(
-            1
-          )}/10. Responses were detailed and showed good understanding of the subject matter.`
+          ? `The candidate demonstrated strong performance across ${
+              questionsWithAnswer.length
+            } questions with an average score of ${avgScore.toFixed(
+              1
+            )}/10. Responses were detailed and showed good understanding of the subject matter.`
           : avgScore >= 5
             ? `The candidate showed moderate performance with an average score of ${avgScore.toFixed(
-              1
-            )}/10 across ${questionsWithAnswer.length
-            } questions. Some areas showed promise while others need improvement.`
+                1
+              )}/10 across ${
+                questionsWithAnswer.length
+              } questions. Some areas showed promise while others need improvement.`
             : `The candidate's performance indicates areas for significant improvement. Average score was ${avgScore.toFixed(
-              1
-            )}/10 across ${questionsWithAnswer.length
-            } questions. Additional preparation and study would be beneficial.`,
+                1
+              )}/10 across ${
+                questionsWithAnswer.length
+              } questions. Additional preparation and study would be beneficial.`,
       keyStrengths: [
         avgScore >= 7
           ? 'Strong technical knowledge'
@@ -1479,9 +1548,7 @@ exports.getBehavioralAnalysis = async (req, res) => {
         avgAnswerLength > 50
           ? 'Detailed and comprehensive responses'
           : 'Concise communication style',
-        detailedAnswers > briefAnswers
-          ? 'Thorough in explanations'
-          : 'Direct and to the point',
+        detailedAnswers > briefAnswers ? 'Thorough in explanations' : 'Direct and to the point',
       ],
       areasOfGrowth: [
         avgScore < 7
@@ -1500,10 +1567,10 @@ exports.getBehavioralAnalysis = async (req, res) => {
     const video_analysis_insights = {
       positive_indicators: video_url
         ? [
-          'Video recording completed successfully',
-          'Interview session captured for review',
-          `Average response time: ${avgResponseTime.toFixed(1)} seconds`,
-        ]
+            'Video recording completed successfully',
+            'Interview session captured for review',
+            `Average response time: ${avgResponseTime.toFixed(1)} seconds`,
+          ]
         : [],
       areas_for_improvement: [
         avgScore < 7
@@ -1544,24 +1611,22 @@ exports.getBehavioralAnalysis = async (req, res) => {
       summary:
         avgScore >= 7
           ? `Strong performance with average score of ${avgScore.toFixed(
-            1
-          )}/10. Candidate demonstrates good understanding and communication skills.`
+              1
+            )}/10. Candidate demonstrates good understanding and communication skills.`
           : avgScore >= 5
             ? `Moderate performance with average score of ${avgScore.toFixed(
-              1
-            )}/10. Candidate shows potential but may need additional training.`
+                1
+              )}/10. Candidate shows potential but may need additional training.`
             : `Performance below expectations with average score of ${avgScore.toFixed(
-              1
-            )}/10. Consider additional assessment or training before proceeding.`,
+                1
+              )}/10. Consider additional assessment or training before proceeding.`,
     };
 
     // Generate quick stats
     const quickStats = {
-      communication:
-        avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
+      communication: avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
       technical: avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
-      problemSolving:
-        avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
+      problemSolving: avgScore >= 7 ? 'Excellent' : avgScore >= 5 ? 'Good' : 'Fair',
       leadership: avgScore >= 7 ? 'Good' : avgScore >= 5 ? 'Fair' : 'Poor',
     };
 

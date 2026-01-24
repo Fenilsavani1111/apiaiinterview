@@ -11,7 +11,7 @@ const studentController = {
 
       console.log('📝 CREATE STUDENTS REQUEST:', {
         jobPostId,
-        studentCount: students?.length
+        studentCount: students?.length,
       });
 
       if (!jobPostId) {
@@ -40,7 +40,7 @@ const studentController = {
         return res.status(400).json({
           success: false,
           message: 'Validation errors',
-          errors: errors
+          errors: errors,
         });
       }
 
@@ -49,28 +49,28 @@ const studentController = {
         where: {
           jobPostId: jobPostId,
           email: {
-            [Op.in]: students.map(s => s.email.toLowerCase())
-          }
-        }
+            [Op.in]: students.map((s) => s.email.toLowerCase()),
+          },
+        },
       });
 
       if (existingStudents.length > 0) {
-        const duplicateEmails = existingStudents.map(s => s.email);
+        const duplicateEmails = existingStudents.map((s) => s.email);
         return res.status(409).json({
           success: false,
           message: 'Some students already exist for this job post',
-          duplicateEmails: duplicateEmails
+          duplicateEmails: duplicateEmails,
         });
       }
 
       // Create students using ONLY existing database columns
-      const studentsToCreate = students.map(student => ({
+      const studentsToCreate = students.map((student) => ({
         name: student.name,
         email: student.email.toLowerCase(),
         mobile: student.phoneNumber, // Store phone in 'mobile' column
         jobPostId: jobPostId,
-        status: 'scheduled',
-        appliedDate: new Date()
+        status: 'pending',
+        appliedDate: new Date(),
       }));
 
       const createdStudents = await StudentsWithJobPost.bulkCreate(studentsToCreate);
@@ -81,7 +81,7 @@ const studentController = {
         success: true,
         message: `${createdStudents.length} students added successfully`,
         count: createdStudents.length,
-        students: createdStudents
+        students: createdStudents,
       });
     } catch (error) {
       console.error('❌ Create students error:', error);
@@ -104,7 +104,7 @@ const studentController = {
 
       const students = await StudentsWithJobPost.findAll({
         where: {
-          jobPostId: jobPostId
+          jobPostId: jobPostId,
         },
         order: [['createdAt', 'DESC']],
         attributes: [
@@ -115,12 +115,12 @@ const studentController = {
           'jobPostId',
           'status',
           'appliedDate',
-          'createdAt'
-        ]
+          'createdAt',
+        ],
       });
 
       // Transform mobile to phoneNumber for frontend
-      const transformedStudents = students.map(s => ({
+      const transformedStudents = students.map((s) => ({
         id: s.id,
         name: s.name,
         email: s.email,
@@ -128,13 +128,13 @@ const studentController = {
         mobile: s.mobile,
         jobPostId: s.jobPostId,
         status: s.status,
-        createdAt: s.createdAt
+        createdAt: s.createdAt,
       }));
 
       return res.status(200).json({
         success: true,
         count: transformedStudents.length,
-        students: transformedStudents
+        students: transformedStudents,
       });
     } catch (error) {
       console.error('❌ Get students error:', error);
@@ -158,14 +158,14 @@ const studentController = {
       // Delete all students for this job post
       const deletedCount = await StudentsWithJobPost.destroy({
         where: {
-          jobPostId: jobPostId
-        }
+          jobPostId: jobPostId,
+        },
       });
 
       return res.status(200).json({
         success: true,
         message: `${deletedCount} students deleted successfully`,
-        deletedCount: deletedCount
+        deletedCount: deletedCount,
       });
     } catch (error) {
       console.error('❌ Delete students error:', error);
@@ -221,7 +221,7 @@ const studentController = {
 
       console.log('🔄 UPDATE STUDENTS REQUEST:', {
         jobPostId,
-        studentCount: students?.length
+        studentCount: students?.length,
       });
 
       if (!students || !Array.isArray(students)) {
@@ -234,8 +234,8 @@ const studentController = {
       // Delete existing students for this job
       await StudentsWithJobPost.destroy({
         where: {
-          jobPostId: jobPostId
-        }
+          jobPostId: jobPostId,
+        },
       });
 
       if (students.length === 0) {
@@ -243,18 +243,18 @@ const studentController = {
           success: true,
           message: 'All students removed successfully',
           count: 0,
-          students: []
+          students: [],
         });
       }
 
       // Create new students
-      const studentsToCreate = students.map(student => ({
+      const studentsToCreate = students.map((student) => ({
         name: student.name,
         email: student.email.toLowerCase(),
         mobile: student.phoneNumber,
         jobPostId: jobPostId,
-        status: 'scheduled',
-        appliedDate: new Date()
+        status: 'pending',
+        appliedDate: new Date(),
       }));
 
       const createdStudents = await StudentsWithJobPost.bulkCreate(studentsToCreate);
@@ -262,7 +262,7 @@ const studentController = {
       console.log('✅ Students updated successfully:', createdStudents.length);
 
       // Transform response
-      const transformedStudents = createdStudents.map(s => ({
+      const transformedStudents = createdStudents.map((s) => ({
         id: s.id,
         name: s.name,
         email: s.email,
@@ -270,14 +270,14 @@ const studentController = {
         mobile: s.mobile,
         jobPostId: s.jobPostId,
         status: s.status,
-        createdAt: s.createdAt
+        createdAt: s.createdAt,
       }));
 
       return res.status(200).json({
         success: true,
         message: `${transformedStudents.length} students updated successfully`,
         count: transformedStudents.length,
-        students: transformedStudents
+        students: transformedStudents,
       });
     } catch (error) {
       console.error('❌ Update students error:', error);
@@ -298,14 +298,14 @@ const studentController = {
 
       const count = await StudentsWithJobPost.count({
         where: {
-          jobPostId: jobPostId
-        }
+          jobPostId: jobPostId,
+        },
       });
 
       return res.status(200).json({
         success: true,
         jobPostId: jobPostId,
-        count: count
+        count: count,
       });
     } catch (error) {
       console.error('❌ Get student count error:', error);
