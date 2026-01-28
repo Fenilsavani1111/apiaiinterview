@@ -83,10 +83,10 @@ const transformJobPostForFrontend = (jobPost) => {
     salary:
       jobPost.salaryMin && jobPost.salaryMax
         ? {
-            min: jobPost.salaryMin,
-            max: jobPost.salaryMax,
-            currency: jobPost.salaryCurrency,
-          }
+          min: jobPost.salaryMin,
+          max: jobPost.salaryMax,
+          currency: jobPost.salaryCurrency,
+        }
         : undefined,
     requirements: jobPost.requirements?.map((r) => r.requirement) || [],
     responsibilities: jobPost.responsibilities?.map((r) => r.responsibility) || [],
@@ -584,77 +584,6 @@ exports.sendStudentExamLink = async (req, res) => {
   }
 };
 
-// VERIFY EMAIL FOR INTERVIEW ACCESS
-exports.verifyEmailForInterview = async (req, res) => {
-  const { token, email } = req.body;
-
-  if (!token || !email) {
-    return res.status(400).json({ error: 'Token and email are required' });
-  }
-
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, SECRET);
-    const jobId = decoded.jobId;
-
-    // Check if student exists in the allowed list
-    const student = await StudentsWithJobPost.findOne({
-      where: {
-        email: email.toLowerCase(),
-        jobPostId: jobId,
-      },
-    });
-
-    if (!student) {
-      return res.status(403).json({
-        success: false,
-        error:
-          'Access denied. Your email is not authorized for this interview. Please contact HR .',
-      });
-    }
-
-    // Check if already completed
-    if (student.status === 'completed') {
-      return res.status(400).json({
-        success: false,
-        error: 'You have already completed this interview.',
-      });
-    }
-
-    // Return success with student info
-    return res.status(200).json({
-      success: true,
-      message: 'Email verified successfully',
-      student: {
-        id: student.id,
-        name: student.name,
-        email: student.email,
-        status: student.status,
-      },
-    });
-  } catch (err) {
-    if (err.name === 'JsonWebTokenError') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid token',
-      });
-    }
-
-    if (err.name === 'TokenExpiredError') {
-      return res.status(400).json({
-        success: false,
-        error: 'Token has expired. Please request a new interview link.',
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: 'Verification failed',
-      details: err.message,
-    });
-  }
-};
-
 // get job post with token
 exports.getJobpostbyToken = async (req, res) => {
   const { token } = req.body;
@@ -685,12 +614,8 @@ exports.getJobpostbyToken = async (req, res) => {
 exports.joinJobPostWithToken = async (req, res) => {
   const { token, email } = req.body;
 
-  if (!token) {
-    return res.status(400).json({ error: 'Token is required' });
-  }
-
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+  if (!token || !email) {
+    return res.status(400).json({ error: 'Token and email are required' });
   }
 
   const t = await sequelize.transaction();
@@ -731,9 +656,9 @@ exports.joinJobPostWithToken = async (req, res) => {
     }
 
     // Check if already completed
-    if (allowedStudent.status === 'completed') {
+    if (allowedStudent.status === 'completed' || allowedStudent.status === 'under_review') {
       return res.status(400).json({
-        error: 'You have already completed this interview.',
+        error: 'You have already completed or under review this interview.',
       });
     }
 
@@ -1523,22 +1448,19 @@ exports.getBehavioralAnalysis = async (req, res) => {
     const aiEvaluationSummary = {
       summary:
         avgScore >= 7
-          ? `The candidate demonstrated strong performance across ${
-              questionsWithAnswer.length
-            } questions with an average score of ${avgScore.toFixed(
-              1
-            )}/10. Responses were detailed and showed good understanding of the subject matter.`
+          ? `The candidate demonstrated strong performance across ${questionsWithAnswer.length
+          } questions with an average score of ${avgScore.toFixed(
+            1
+          )}/10. Responses were detailed and showed good understanding of the subject matter.`
           : avgScore >= 5
             ? `The candidate showed moderate performance with an average score of ${avgScore.toFixed(
-                1
-              )}/10 across ${
-                questionsWithAnswer.length
-              } questions. Some areas showed promise while others need improvement.`
+              1
+            )}/10 across ${questionsWithAnswer.length
+            } questions. Some areas showed promise while others need improvement.`
             : `The candidate's performance indicates areas for significant improvement. Average score was ${avgScore.toFixed(
-                1
-              )}/10 across ${
-                questionsWithAnswer.length
-              } questions. Additional preparation and study would be beneficial.`,
+              1
+            )}/10 across ${questionsWithAnswer.length
+            } questions. Additional preparation and study would be beneficial.`,
       keyStrengths: [
         avgScore >= 7
           ? 'Strong technical knowledge'
@@ -1567,10 +1489,10 @@ exports.getBehavioralAnalysis = async (req, res) => {
     const video_analysis_insights = {
       positive_indicators: video_url
         ? [
-            'Video recording completed successfully',
-            'Interview session captured for review',
-            `Average response time: ${avgResponseTime.toFixed(1)} seconds`,
-          ]
+          'Video recording completed successfully',
+          'Interview session captured for review',
+          `Average response time: ${avgResponseTime.toFixed(1)} seconds`,
+        ]
         : [],
       areas_for_improvement: [
         avgScore < 7
@@ -1611,15 +1533,15 @@ exports.getBehavioralAnalysis = async (req, res) => {
       summary:
         avgScore >= 7
           ? `Strong performance with average score of ${avgScore.toFixed(
-              1
-            )}/10. Candidate demonstrates good understanding and communication skills.`
+            1
+          )}/10. Candidate demonstrates good understanding and communication skills.`
           : avgScore >= 5
             ? `Moderate performance with average score of ${avgScore.toFixed(
-                1
-              )}/10. Candidate shows potential but may need additional training.`
+              1
+            )}/10. Candidate shows potential but may need additional training.`
             : `Performance below expectations with average score of ${avgScore.toFixed(
-                1
-              )}/10. Consider additional assessment or training before proceeding.`,
+              1
+            )}/10. Consider additional assessment or training before proceeding.`,
     };
 
     // Generate quick stats

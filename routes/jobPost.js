@@ -51,7 +51,6 @@ router.post(
 router.post('/get-jobpost-by-token', jobPostController.getJobpostbyToken);
 
 // Interview access
-router.post('/verify-email-for-interview', jobPostController.verifyEmailForInterview);
 router.post('/join-job-link', jobPostController.joinJobPostWithToken);
 
 // Candidate interview
