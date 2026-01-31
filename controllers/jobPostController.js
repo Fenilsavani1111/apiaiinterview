@@ -116,6 +116,9 @@ const transformJobPostForFrontend = (jobPost) => {
     activeJoinUserCount: jobPost.activeJoinUserCount || 0,
     // Expose video recording flag to admin and candidate frontends
     enableVideoRecording: jobPost.enableVideoRecording === true,
+    interviewStartDateTime: jobPost.interviewStartDateTime
+      ? new Date(jobPost.interviewStartDateTime).toISOString()
+      : null,
   };
 
   return transformed;
@@ -142,6 +145,7 @@ exports.createJobPost = async (req, res) => {
       questions = [],
       students = [],
       enableVideoRecording = false,
+      interviewStartDateTime,
     } = req.body;
     const userId = req.user?.id;
 
@@ -174,6 +178,9 @@ exports.createJobPost = async (req, res) => {
       status: status,
       createdBy: createdBy || 'admin',
       enableVideoRecording: enableVideoRecording || false,
+      interviewStartDateTime: interviewStartDateTime
+        ? new Date(interviewStartDateTime)
+        : null,
       userId: userId,
     };
 
@@ -358,6 +365,7 @@ exports.updateJobPost = async (req, res) => {
       responsibilities = [],
       skills = [],
       questions = [],
+      interviewStartDateTime,
     } = req.body;
 
     if (!id) return res.status(400).json({ error: 'Job post id is required' });
@@ -380,6 +388,10 @@ exports.updateJobPost = async (req, res) => {
         typeof req.body.enableVideoRecording === 'boolean'
           ? req.body.enableVideoRecording
           : jobPost.enableVideoRecording,
+      interviewStartDateTime:
+        interviewStartDateTime != null
+          ? new Date(interviewStartDateTime)
+          : jobPost.interviewStartDateTime,
     };
 
     await jobPost.update(jobPostData, { where: { id } }, { transaction: t });
@@ -638,6 +650,18 @@ exports.joinJobPostWithToken = async (req, res) => {
 
     if (!job) {
       return res.status(404).json({ error: 'Job post not found' });
+    }
+
+    // Only allow interview when current date/time >= interviewStartDateTime
+    if (job.interviewStartDateTime) {
+      const now = new Date();
+      const startAt = new Date(job.interviewStartDateTime);
+      if (now < startAt) {
+        return res.status(403).json({
+          error: `This interview opens at ${format(startAt, 'PPpp')}. Please try again after the scheduled start time.`,
+          interviewStartDateTime: startAt.toISOString(),
+        });
+      }
     }
 
     // CRITICAL: Check if student email is in the allowed list
