@@ -11,8 +11,8 @@ const path = require('path');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'surbhivasoya11@gmail.com',
-    pass: process.env.EMAIL_PASSWORD || 'hvey iiqt jqfz krxc',
+    user: process.env.EMAIL_USER || 'support@deepvox.ai',
+    pass: process.env.EMAIL_PASSWORD || 'gzld whwa kjxy qnyx',
   },
 });
 

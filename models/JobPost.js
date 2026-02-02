@@ -84,6 +84,10 @@ module.exports = (sequelize) => {
       type: DataTypes.DATE,
       allowNull: true
     },
+    logoUrl: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
   });
   return JobPost;
 };

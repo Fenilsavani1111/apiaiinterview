@@ -119,6 +119,7 @@ const transformJobPostForFrontend = (jobPost) => {
     interviewStartDateTime: jobPost.interviewStartDateTime
       ? new Date(jobPost.interviewStartDateTime).toISOString()
       : null,
+    logoUrl: jobPost.logoUrl || null,
   };
 
   return transformed;
@@ -146,6 +147,7 @@ exports.createJobPost = async (req, res) => {
       students = [],
       enableVideoRecording = false,
       interviewStartDateTime,
+      logoUrl,
     } = req.body;
     const userId = req.user?.id;
 
@@ -182,6 +184,7 @@ exports.createJobPost = async (req, res) => {
         ? new Date(interviewStartDateTime)
         : null,
       userId: userId,
+      logoUrl: logoUrl || null,
     };
 
     const jobPost = await JobPost.create(jobPostData, { transaction: t });
@@ -366,6 +369,7 @@ exports.updateJobPost = async (req, res) => {
       skills = [],
       questions = [],
       interviewStartDateTime,
+      logoUrl,
     } = req.body;
 
     if (!id) return res.status(400).json({ error: 'Job post id is required' });
@@ -392,6 +396,7 @@ exports.updateJobPost = async (req, res) => {
         interviewStartDateTime != null
           ? new Date(interviewStartDateTime)
           : jobPost.interviewStartDateTime,
+      ...(logoUrl !== undefined && { logoUrl: logoUrl || null }),
     };
 
     await jobPost.update(jobPostData, { where: { id } }, { transaction: t });
@@ -671,6 +676,13 @@ exports.joinJobPostWithToken = async (req, res) => {
         jobPostId: jobId,
       },
     });
+
+    // if already given interview, return the interview details
+    if (allowedStudent && allowedStudent.status === 'completed' || allowedStudent.status === 'under_review') {
+      return res.status(403).json({
+        error: 'You have already completed or under review this interview.',
+      });
+    }
 
     if (!allowedStudent) {
       return res.status(403).json({
