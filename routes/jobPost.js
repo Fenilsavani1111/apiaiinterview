@@ -3,6 +3,7 @@ const router = express.Router();
 const jobPostController = require('../controllers/jobPostController');
 const uploadFileController = require('../controllers/uploadFileController');
 const authMiddleware = require('../middlewares/auth');
+const requireJobPostLlmKey = require('../middlewares/requireJobPostLlmKey');
 
 const multer = require('multer');
 const path = require('path');
@@ -83,7 +84,7 @@ router.post('/upload-interview-video', uploadvideo.single('video'), (req, res) =
 router.post('/upload-resume', upload.single('file'), uploadFileController.UploadResume);
 
 // Job management
-router.post('/', authMiddleware, jobPostController.createJobPost);
+router.post('/', authMiddleware, requireJobPostLlmKey, jobPostController.createJobPost);
 router.put('/:id', authMiddleware, jobPostController.updateJobPost);
 router.delete('/:id', authMiddleware, jobPostController.deleteJobPost);
 

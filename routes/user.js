@@ -16,6 +16,8 @@ router.get('/profile', authMiddleware, userController.profile);
 router.get('/users', authMiddleware, userController.getAllUsers);
 router.get('/users/:id', authMiddleware, userController.getUserById);
 router.put('/users/:id', authMiddleware, userController.updateUser);
+router.put('/users/:id/llm-key', authMiddleware, userController.updateUserLlmKey);
+router.put('/users/:id/jobpost-llm-key', authMiddleware, userController.updateUserJobPostLlmKey);
 router.delete('/users/:id', authMiddleware, userController.deleteUser);
 
 module.exports = router;

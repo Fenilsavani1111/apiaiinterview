@@ -26,6 +26,7 @@ const {
 const { getPercentage } = require('../utils/helper');
 const SECRET = process.env.LINK_TOKEN_SECRET || 'your-very-secret-key';
 const studentsData = require('../data/studentsWithJobPostData.json');
+const User = require('../models/User');
 
 // Helper to include all nested data
 const fullInclude = [
@@ -612,11 +613,19 @@ exports.getJobpostbyToken = async (req, res) => {
     const jobId = decoded.jobId;
 
     const job = await JobPost.findByPk(jobId, {
-      include: fullInclude,
+      include: [
+        ...fullInclude,
+        {
+          model: User,
+          as: 'User',
+          attributes: ['id', 'name', 'email', 'llmKey'],
+        },
+      ],
     });
     if (!job) {
       return res.status(404).json({ error: 'Job post not found' });
     }
+
     return res.status(200).json({
       message: 'Job post found',
       job: job,

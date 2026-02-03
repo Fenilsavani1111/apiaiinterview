@@ -34,6 +34,15 @@ module.exports = (sequelize) => {
           notEmpty: true,
         },
       },
+      llmKey: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      jobPostLlmKey: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        field: 'jobpost_llm_key',
+      },
     },
     {
       tableName: 'users',

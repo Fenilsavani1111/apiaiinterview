@@ -152,7 +152,16 @@ const userController = {
   profile: async (req, res) => {
     try {
       const user = await User.findByPk(req.user.id, {
-        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt'],
+        attributes: [
+          'id',
+          'email',
+          'name',
+          'phoneNumber',
+          'llmKey',
+          'jobPostLlmKey',
+          'createdAt',
+          'updatedAt',
+        ],
       });
 
       if (!user) {
@@ -164,7 +173,18 @@ const userController = {
 
       return res.status(200).json({
         success: true,
-        user,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          llmKey: user.llmKey,
+          hasLlmKey: Boolean(user.llmKey),
+          jobPostLlmKey: user.jobPostLlmKey,
+          hasJobPostLlmKey: Boolean(user.jobPostLlmKey),
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
       });
     } catch (error) {
       console.error('❌ Profile error:', error);
@@ -195,7 +215,16 @@ const userController = {
 
       // Build the query options
       const queryOptions = {
-        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt'],
+        attributes: [
+          'id',
+          'email',
+          'name',
+          'phoneNumber',
+          'llmKey',
+          'jobPostLlmKey',
+          'createdAt',
+          'updatedAt',
+        ],
         limit: limit,
         offset: offset,
         order: [['createdAt', 'DESC']],
@@ -237,6 +266,8 @@ const userController = {
         email: user.email,
         name: user.name,
         phoneNumber: user.phoneNumber,
+        hasLlmKey: Boolean(user.llmKey),
+        hasJobPostLlmKey: Boolean(user.jobPostLlmKey),
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       }));
@@ -277,7 +308,16 @@ const userController = {
       const { id } = req.params;
 
       const user = await User.findByPk(id, {
-        attributes: ['id', 'email', 'name', 'phoneNumber', 'createdAt', 'updatedAt'],
+        attributes: [
+          'id',
+          'email',
+          'name',
+          'phoneNumber',
+          'llmKey',
+          'jobPostLlmKey',
+          'createdAt',
+          'updatedAt',
+        ],
       });
 
       if (!user) {
@@ -294,6 +334,8 @@ const userController = {
           email: user.email,
           name: user.name,
           phoneNumber: user.phoneNumber,
+          hasLlmKey: Boolean(user.llmKey),
+          hasJobPostLlmKey: Boolean(user.jobPostLlmKey),
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },
@@ -303,6 +345,104 @@ const userController = {
       return res.status(500).json({
         success: false,
         message: 'Server error fetching user',
+        error: error.message,
+      });
+    }
+  },
+
+  // ============================================
+  // UPDATE USER LLM KEY (Protected)
+  // NOTE: This endpoint never returns the key value.
+  // ============================================
+  updateUserLlmKey: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { llmKey } = req.body;
+
+      // Allow null/empty-string to clear the key
+      const normalizedKey =
+        llmKey === null || llmKey === undefined || String(llmKey).trim() === ''
+          ? null
+          : String(llmKey);
+
+      const user = await User.findByPk(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      await user.update({ llmKey: normalizedKey });
+
+      return res.status(200).json({
+        success: true,
+        message: normalizedKey ? 'LLM key updated successfully' : 'LLM key cleared successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          hasLlmKey: Boolean(normalizedKey),
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Update user LLM key error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Server error updating LLM key',
+        error: error.message,
+      });
+    }
+  },
+
+  // ============================================
+  // UPDATE USER JOB POST LLM KEY (Protected)
+  // NOTE: This endpoint never returns the key value.
+  // ============================================
+  updateUserJobPostLlmKey: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { jobPostLlmKey } = req.body;
+
+      // Allow null/empty-string to clear the key
+      const normalizedKey =
+        jobPostLlmKey === null || jobPostLlmKey === undefined || String(jobPostLlmKey).trim() === ''
+          ? null
+          : String(jobPostLlmKey);
+
+      const user = await User.findByPk(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      await user.update({ jobPostLlmKey: normalizedKey });
+
+      return res.status(200).json({
+        success: true,
+        message: normalizedKey
+          ? 'Job post LLM key updated successfully'
+          : 'Job post LLM key cleared successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          hasJobPostLlmKey: Boolean(normalizedKey),
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      });
+    } catch (error) {
+      console.error('❌ Update user Job Post LLM key error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Server error updating Job Post LLM key',
         error: error.message,
       });
     }
